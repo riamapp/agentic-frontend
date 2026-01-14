@@ -27,6 +27,8 @@ const files = ref([])
 const loadingFiles = ref(false)
 const feedbackLoading = ref({}) // Track which file is loading feedback
 const fileFeedbacks = ref({}) // Store feedback for each file
+const teacherFeedbackLoading = ref({}) // Track which file is loading teacher feedback
+const teacherFeedbacks = ref({}) // Store teacher feedback for each file
 
 // Student data (mock - will be replaced with API calls later)
 const studentInfo = ref({
@@ -35,7 +37,48 @@ const studentInfo = ref({
   stage: 'Development',
   studentId: 'S01',
   instruments: 'Violin – Strings',
-  programme: 'Junior RIAM (Years 1-2)'
+  programme: 'Junior RIAM (Years 1-2)',
+  goals: [
+    {
+      title: 'Twinkle Twinkle Variations A',
+      description: 'Master this foundational piece with proper bow technique and intonation',
+      programme: 'Junior RIAM (Years 1-2)',
+      dueDate: 'February 15, 2026',
+      stages: [
+        { number: 1, completed: true, name: 'Learn notes and rhythm' },
+        { number: 2, completed: true, name: 'Practice with correct tempo' },
+        { number: 3, completed: false, current: true, name: 'Add dynamics and expression' },
+        { number: 4, completed: false, name: 'Performance ready' }
+      ],
+      progress: 75
+    },
+    {
+      title: 'Lightly Row',
+      description: 'Develop smooth bowing technique and musical phrasing',
+      programme: 'Junior RIAM (Years 1-2)',
+      dueDate: 'March 1, 2026',
+      stages: [
+        { number: 1, completed: true, name: 'Learn notes and rhythm' },
+        { number: 2, completed: false, current: true, name: 'Practice with correct tempo' },
+        { number: 3, completed: false, name: 'Add dynamics and expression' },
+        { number: 4, completed: false, name: 'Performance ready' }
+      ],
+      progress: 50
+    },
+    {
+      title: 'Suzuki Etude 1',
+      description: 'Focus on bow control and left-hand finger placement',
+      programme: 'Junior RIAM (Years 1-2)',
+      dueDate: 'March 15, 2026',
+      stages: [
+        { number: 1, completed: false, current: true, name: 'Learn notes and rhythm' },
+        { number: 2, completed: false, name: 'Practice with correct tempo' },
+        { number: 3, completed: false, name: 'Add dynamics and expression' },
+        { number: 4, completed: false, name: 'Performance ready' }
+      ],
+      progress: 25
+    }
+  ]
 })
 
 const toggleSidebar = () => {
@@ -71,8 +114,31 @@ const loadFiles = async () => {
       ...file,
       uploadDate: file.uploadDate || file.createdAt || new Date().toISOString()
     }))
+    
+    // Add placeholder file if no files exist
+    if (files.value.length === 0) {
+      files.value.push({
+        key: 'placeholder-piano-file',
+        fileName: 'Piano file 3 mins.mp3',
+        type: 'Audio',
+        uploadDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        size: 0,
+        isPlaceholder: true
+      })
+    }
   } catch (err) {
     console.error('Failed to load files:', err)
+    // Add placeholder file even if API call fails
+    if (files.value.length === 0) {
+      files.value.push({
+        key: 'placeholder-piano-file',
+        fileName: 'Piano file 3 mins.mp3',
+        type: 'Audio',
+        uploadDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        size: 0,
+        isPlaceholder: true
+      })
+    }
   } finally {
     loadingFiles.value = false
   }
@@ -138,6 +204,10 @@ const formatDate = (dateString) => {
 
 // View file
 const handleViewFile = async (file) => {
+  // Don't allow viewing placeholder files
+  if (file.isPlaceholder) {
+    return
+  }
   try {
     const url = await fetchFileUrl(file.key)
     if (url) {
@@ -150,6 +220,11 @@ const handleViewFile = async (file) => {
 
 // Delete file
 const handleDeleteFile = async (file) => {
+  // Don't allow deleting placeholder files
+  if (file.isPlaceholder) {
+    return
+  }
+  
   if (!confirm(`Are you sure you want to delete "${file.fileName}"?`)) {
     return
   }
@@ -166,16 +241,35 @@ const handleDeleteFile = async (file) => {
   }
 }
 
-// Get feedback for a file
+// Get AI feedback for a file
 const handleGetFeedback = async (file) => {
   feedbackLoading.value[file.key] = true
   try {
-    const feedback = await getFeedback(file.key, studentInfo.value.studentId)
-    fileFeedbacks.value[file.key] = feedback
+    // Check if this is the placeholder file
+    if (file.key === 'placeholder-piano-file') {
+      // Show placeholder feedback
+      fileFeedbacks.value[file.key] = "Great work on your piano practice! Your rhythm is steady and your dynamics show good control. Continue working on maintaining consistent tempo throughout the piece. The phrasing in the middle section could be more expressive - try to emphasize the melodic line. Overall, this is solid progress. Keep practicing!"
+    } else {
+      const feedback = await getFeedback(file.key, studentInfo.value.studentId)
+      fileFeedbacks.value[file.key] = feedback
+    }
   } catch (err) {
     console.error('Failed to get feedback:', err)
   } finally {
     feedbackLoading.value[file.key] = false
+  }
+}
+
+// Get teacher feedback for a file
+const handleGetTeacherFeedback = async (file) => {
+  teacherFeedbackLoading.value[file.key] = true
+  try {
+    // Show awaiting teacher feedback message
+    teacherFeedbacks.value[file.key] = "Awaiting teacher feedback"
+  } catch (err) {
+    console.error('Failed to get teacher feedback:', err)
+  } finally {
+    teacherFeedbackLoading.value[file.key] = false
   }
 }
 
@@ -557,17 +651,45 @@ const handleLogout = async () => {
             <!-- AI Feedbacks Tab -->
             <div v-show="activeTab === 'ai-feedbacks'" class="tab-pane fade" :class="{ 'show active': activeTab === 'ai-feedbacks' }">
               <h4>AI Feedbacks</h4>
+              <p class="text-muted mb-3">AI-generated feedback on your uploaded practice recordings.</p>
               <div class="card mb-3">
                 <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-start">
+                  <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
-                      <h5 class="card-title">Junior RIAM (Years 1–2) - Twinkle Variations Practice</h5>
-                      <p class="mb-1"><strong>Grade:</strong> <span class="badge bg-warning">C+</span></p>
+                      <h5 class="card-title mb-1">
+                        <i class="bi bi-file-music text-primary-custom"></i> Piano file 3 mins.mp3
+                      </h5>
+                      <p class="mb-1"><small class="text-muted">Upload Date: {{ new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) }}</small></p>
                     </div>
-                    <small class="text-muted">Jan 11, 2026</small>
+                    <span class="badge bg-success">Analyzed</span>
                   </div>
-                  <p class="card-text mt-2">Good effort on Twinkle Variations! Remember to balance the violin on your shoulder and relax your right-hand thumb.</p>
-                  <p class="mb-0"><small><strong>Instructor:</strong> Ms. Niamh O'Donnell</small></p>
+                  <div class="mb-3">
+                    <h6 class="text-primary-custom mb-2">AI Analysis Summary:</h6>
+                    <div class="alert alert-light">
+                      <p class="mb-2"><strong>Overall Assessment:</strong> <span class="badge bg-info">Good</span></p>
+                      <p class="mb-0"><strong>Score:</strong> 75/100</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h6 class="text-primary-custom mb-2">Detailed Feedback:</h6>
+                    <p class="card-text">Great work on your piano practice! Your rhythm is steady and your dynamics show good control. Continue working on maintaining consistent tempo throughout the piece. The phrasing in the middle section could be more expressive - try to emphasize the melodic line. Overall, this is solid progress. Keep practicing!</p>
+                  </div>
+                  <div class="mt-3">
+                    <h6 class="text-primary-custom mb-2">Key Strengths:</h6>
+                    <ul class="mb-2">
+                      <li>Steady rhythm throughout</li>
+                      <li>Good dynamic control</li>
+                      <li>Solid technical foundation</li>
+                    </ul>
+                    <h6 class="text-primary-custom mb-2">Areas for Improvement:</h6>
+                    <ul class="mb-0">
+                      <li>Maintain consistent tempo</li>
+                      <li>Enhance phrasing and melodic expression in middle section</li>
+                    </ul>
+                  </div>
+                  <div class="mt-3 pt-3 border-top">
+                    <small class="text-muted"><i class="bi bi-robot"></i> <strong>AI Analysis:</strong> Generated by Accordo AI on {{ new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) }}</small>
+                  </div>
                 </div>
               </div>
             </div>
@@ -578,22 +700,31 @@ const handleLogout = async () => {
                 <h4>My Goals</h4>
                 <p class="text-muted mb-0">Goals are set by your teacher</p>
               </div>
+              <div class="alert alert-info">
+                <strong>Stage Progression:</strong> Goals are divided into stages. You progress through stages based on positive feedback from your teacher. Each stage must be completed before moving to the next.
+              </div>
               <div class="row">
-                <div class="col-md-6 mb-3">
+                <div v-for="goal in studentInfo.goals" :key="goal.title" class="col-md-6 mb-3">
                   <div class="card">
                     <div class="card-body">
-                      <h5 class="card-title">Twinkle Twinkle Variations A</h5>
-                      <p class="card-text">Master this foundational piece with proper bow technique and intonation</p>
+                      <h5 class="card-title">{{ goal.title }}</h5>
+                      <p class="card-text">{{ goal.description }}</p>
+                      <p class="mb-2"><small class="text-muted"><strong>Programme:</strong> {{ goal.programme }} | <strong>Due:</strong> {{ goal.dueDate }}</small></p>
                       <div class="mt-2 mb-2">
-                        <span class="badge bg-success me-1">Stage 1 ✓</span>
-                        <span class="badge bg-success me-1">Stage 2 ✓</span>
-                        <span class="badge bg-primary me-1">Stage 3 (Current)</span>
-                        <span class="badge bg-secondary">Stage 4</span>
+                        <span v-for="stage in goal.stages" :key="stage.number" class="badge me-1" :class="{
+                          'bg-success': stage.completed,
+                          'bg-primary': stage.current,
+                          'bg-secondary': !stage.completed && !stage.current
+                        }">
+                          Stage {{ stage.number }}{{ stage.completed ? ' ✓' : '' }}{{ stage.current ? ' (Current)' : '' }}
+                        </span>
                       </div>
                       <div class="progress">
-                        <div class="progress-bar bg-primary-custom" role="progressbar" style="width: 75%">75%</div>
+                        <div class="progress-bar bg-primary-custom" role="progressbar" :style="`width: ${goal.progress}%`">{{ goal.progress }}%</div>
                       </div>
-                      <small class="text-muted mt-2 d-block">Due: February 15, 2026</small>
+                      <div class="mt-2">
+                        <small class="text-muted"><strong>Current Stage:</strong> {{ goal.stages.find(s => s.current)?.name || goal.stages.find(s => !s.completed)?.name || 'Completed' }}</small>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -681,35 +812,82 @@ const handleLogout = async () => {
                       <td>{{ file.type }}</td>
                       <td>{{ formatDate(file.uploadDate) }}</td>
                       <td>
-                        <div v-if="fileFeedbacks[file.key]" class="feedback-content">
-                          <div class="card bg-light">
-                            <div class="card-body p-2">
-                              <small>
-                                <strong>Feedback:</strong> {{ typeof fileFeedbacks[file.key] === 'string' ? fileFeedbacks[file.key] : JSON.stringify(fileFeedbacks[file.key]) }}
-                              </small>
+                        <div class="d-flex flex-column gap-2">
+                          <!-- AI Feedback -->
+                          <div v-if="fileFeedbacks[file.key]" class="feedback-content">
+                            <div class="card bg-light">
+                              <div class="card-body p-2">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                  <strong>AI Feedback:</strong>
+                                  <button 
+                                    class="btn btn-sm btn-link p-0 text-muted"
+                                    @click="fileFeedbacks[file.key] = null"
+                                    title="Hide feedback"
+                                  >
+                                    <i class="bi bi-x-lg"></i>
+                                  </button>
+                                </div>
+                                <small>
+                                  {{ typeof fileFeedbacks[file.key] === 'string' ? fileFeedbacks[file.key] : JSON.stringify(fileFeedbacks[file.key]) }}
+                                </small>
+                              </div>
                             </div>
                           </div>
+                          <button 
+                            v-else
+                            class="btn btn-sm btn-outline-primary"
+                            @click="handleGetFeedback(file)"
+                            :disabled="feedbackLoading[file.key]"
+                          >
+                            <span v-if="feedbackLoading[file.key]" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Get AI Feedback
+                          </button>
+                          
+                          <!-- Teacher Feedback -->
+                          <div v-if="teacherFeedbacks[file.key]" class="feedback-content">
+                            <div class="card bg-light">
+                              <div class="card-body p-2">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                  <strong>Teacher Feedback:</strong>
+                                  <button 
+                                    class="btn btn-sm btn-link p-0 text-muted"
+                                    @click="teacherFeedbacks[file.key] = null"
+                                    title="Hide feedback"
+                                  >
+                                    <i class="bi bi-x-lg"></i>
+                                  </button>
+                                </div>
+                                <small>
+                                  {{ typeof teacherFeedbacks[file.key] === 'string' ? teacherFeedbacks[file.key] : JSON.stringify(teacherFeedbacks[file.key]) }}
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+                          <button 
+                            v-else
+                            class="btn btn-sm btn-outline-secondary"
+                            @click="handleGetTeacherFeedback(file)"
+                            :disabled="teacherFeedbackLoading[file.key]"
+                          >
+                            <span v-if="teacherFeedbackLoading[file.key]" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Get Teacher Feedback
+                          </button>
                         </div>
-                        <button 
-                          v-else
-                          class="btn btn-sm btn-outline-primary"
-                          @click="handleGetFeedback(file)"
-                          :disabled="feedbackLoading[file.key]"
-                        >
-                          <span v-if="feedbackLoading[file.key]" class="spinner-border spinner-border-sm me-1" role="status"></span>
-                          Get Feedback
-                        </button>
                       </td>
                       <td>
                         <button 
                           class="btn btn-sm btn-info me-1"
                           @click="handleViewFile(file)"
+                          :disabled="file.isPlaceholder"
+                          :title="file.isPlaceholder ? 'Placeholder file - cannot view' : 'View file'"
                         >
                           View
                         </button>
                         <button 
                           class="btn btn-sm btn-danger"
                           @click="handleDeleteFile(file)"
+                          :disabled="file.isPlaceholder"
+                          :title="file.isPlaceholder ? 'Placeholder file - cannot delete' : 'Delete file'"
                         >
                           Delete
                         </button>

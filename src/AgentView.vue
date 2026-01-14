@@ -819,8 +819,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="card bg-body-tertiary h-100">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h5 class="card-title mb-0"><i class="bi bi-robot me-2"></i>Agent</h5>
+    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+      <h5 class="card-title mb-0 text-dark"><i class="bi bi-robot me-2"></i>Agent</h5>
       <button
         v-if="messages.length > 1"
         class="btn btn-sm btn-outline-secondary"
@@ -930,21 +930,6 @@ onBeforeUnmount(() => {
           Please <RouterLink to="/login">login</RouterLink> to use the AI agent.
         </div>
         <div v-else>
-          <div class="mb-2 d-flex align-items-center gap-2">
-            <label for="output-mode-select" class="form-label mb-0 small text-muted">
-              Output Mode:
-            </label>
-            <select
-              id="output-mode-select"
-              v-model="outputMode"
-              class="form-select form-select-sm"
-              style="width: auto"
-              :disabled="isLoading"
-            >
-              <option value="chat">Chat</option>
-              <option value="structured">Structured</option>
-            </select>
-          </div>
           <textarea
             v-model="inputMessage"
             class="form-control mb-2"

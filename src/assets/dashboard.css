@@ -429,6 +429,7 @@ body::before {
   border: none;
   box-shadow: var(--shadow-xl);
   overflow: hidden;
+  background: #ffffff !important;
 }
 
 .modal-header {
@@ -440,6 +441,7 @@ body::before {
 
 .modal-body {
   padding: 2rem;
+  background: #ffffff !important;
 }
 
 .modal-footer {
@@ -653,6 +655,47 @@ body::before {
 
 .chat-messages {
   max-height: 400px;
+}
+
+/* AI Chat Message Styles - Ensure readable text */
+.message-bubble {
+  color: #000000 !important;
+}
+
+.message-bubble.bg-body {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.message-bubble .markdown-content {
+  color: #000000 !important;
+}
+
+.message-bubble .markdown-content p,
+.message-bubble .markdown-content li,
+.message-bubble .markdown-content span,
+.message-bubble .markdown-content div,
+.message-bubble .markdown-content h1,
+.message-bubble .markdown-content h2,
+.message-bubble .markdown-content h3,
+.message-bubble .markdown-content h4,
+.message-bubble .markdown-content h5,
+.message-bubble .markdown-content h6 {
+  color: #000000 !important;
+}
+
+.message-bubble .markdown-content code {
+  background-color: rgba(105, 52, 126, 0.1) !important;
+  color: #000000 !important;
+}
+
+.message-bubble .markdown-content pre {
+  background-color: rgba(105, 52, 126, 0.1) !important;
+  color: #000000 !important;
+}
+
+.message-bubble .markdown-content a {
+  color: var(--primary-color) !important;
 }
 
 /* Chart Container */
@@ -905,6 +948,54 @@ h4, h5 {
   border-radius: 8px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  color: #ffffff !important;
+}
+
+.badge.bg-success {
+  background-color: #198754 !important;
+  color: #ffffff !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000000 !important;
+}
+
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+  color: #ffffff !important;
+}
+
+.badge.bg-primary {
+  background-color: var(--primary-color) !important;
+  color: #ffffff !important;
+}
+
+.badge.bg-info {
+  background-color: #0dcaf0 !important;
+  color: #000000 !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
+}
+
+.badge.text-dark {
+  color: #000000 !important;
+}
+
+/* Badge container text - ensure badge names are readable */
+.badge-container p,
+.badge-container small,
+.badge-container h6 {
+  color: #000000 !important;
+}
+
+/* Badge Progress section text - ensure badge names are readable */
+.card-body.text-center h6,
+.card-body.text-center p {
+  color: #000000 !important;
 }
 
 .badge.bg-primary,

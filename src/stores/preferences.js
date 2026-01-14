@@ -104,16 +104,16 @@ export const usePreferencesStore = defineStore('preferences', {
         if (this.theme) {
           this.applyTheme(this.theme)
         } else {
-          // Default to system if no preference saved
-          this.theme = 'system'
-          this.applyTheme('system')
+          // Default to light if no preference saved
+          this.theme = 'light'
+          this.applyTheme('light')
         }
       } catch (err) {
         this.error = err.message
         console.error('Failed to load preferences:', err)
-        // Default to system on error
-        this.theme = 'system'
-        this.applyTheme('system')
+        // Default to light on error
+        this.theme = 'light'
+        this.applyTheme('light')
       } finally {
         this.loading = false
       }
@@ -193,7 +193,7 @@ export const usePreferencesStore = defineStore('preferences', {
         }
 
         // Get current preferences to preserve theme and displayPicture
-        const currentTheme = this.theme || 'system'
+        const currentTheme = this.theme || 'light'
         const currentDisplayPicture = this.displayPicture || null
         const url = `${awsConfig.apiGatewayUrl}/user/preferences`
         const response = await fetch(url, {
@@ -245,7 +245,7 @@ export const usePreferencesStore = defineStore('preferences', {
         }
 
         // Get current preferences to preserve theme and displayName
-        const currentTheme = this.theme || 'system'
+        const currentTheme = this.theme || 'light'
         const currentDisplayName = this.displayName || null
         const url = `${awsConfig.apiGatewayUrl}/user/preferences`
         const response = await fetch(url, {

@@ -1,9 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useImages } from '@/composables/useImages'
+import { Chart, registerables } from 'chart.js'
+
+// Register Chart.js components
+Chart.register(...registerables)
 
 const authStore = useAuthStore()
 const preferencesStore = usePreferencesStore()
@@ -12,6 +16,337 @@ const { fetchImageUrl } = useImages()
 const activeTab = ref('users')
 const sidebarOpen = ref(false)
 const profilePictureUrl = ref(null)
+
+// Student view state
+const selectedStudent = ref(null)
+const showStudentModal = ref(false)
+const studentDetailTab = ref('sd-overview')
+const studentChartRef = ref(null)
+let currentStudentChart = null
+
+// Mock student data - will be replaced with API calls
+const students = ref([
+  {
+    studentId: 'S01',
+    profile: {
+      name: { first: 'Aoife', last: 'Byrne' },
+      email: 'aoife.byrne@riam.student.ie',
+      age: 10,
+      stage: 'Development',
+      programme: 'Junior RIAM (Years 1-2)',
+      instrument: 'Violin',
+      faculty: 'Strings',
+      teacher: "Ms. Niamh O'Donnell",
+      enrollmentDate: '2024-09-01',
+      piecesInProgress: ['Twinkle Twinkle Variations A', 'Lightly Row', 'Suzuki Etude 1']
+    },
+    technicalSkillsCompetence: {
+      score: 58,
+      practicalTechniqueMark: 58,
+      teacherTechnicalAdvice: ['Balance violin on shoulder', 'Relax right-hand thumb', 'Slow open strings with full bow'],
+      teacherChecklist: {
+        achieved: ['Posture', 'Rhythm'],
+        partial: ['Bow hold', 'Intonation']
+      }
+    },
+    compositionalMusicianshipKnowledge: {
+      score: 55,
+      musicianshipMark: 55,
+      auralEvidenceRecordings: ['claps-4beat-rhythms.mp3', 'sings-3note-patterns.mp3'],
+      creativeReflectiveNotes: ["Student: 'Rhythms feel tricky — singing first helps.'"]
+    },
+    repertoireCulturalKnowledge: {
+      score: 60,
+      repertoireCulturalMark: 60,
+      listeningLogs: [
+        { piece: 'Twinkle variations', composer: 'Various', date: '2025-01-05', notes: 'Simple folk songs' }
+      ],
+      contextMeaningNotes: ['Student can name the tune and notices it appears in different countries.']
+    },
+    performingArtistry: {
+      score: 62,
+      practicalArtistryMark: 62,
+      studentPerformanceReflections: [
+        { date: '2024-12-15', performance: 'Class performance', reflection: 'I was nervous, but proud when I played for the class.' }
+      ],
+      teacherPerformancePrepNotes: ["Set a 'starting routine': breathe, check feet, quiet bow placement before first note."]
+    }
+  },
+  {
+    studentId: 'S02',
+    profile: {
+      name: { first: 'Conor', last: 'Walsh' },
+      email: 'conor.walsh@riam.student.ie',
+      age: 12,
+      stage: 'Intermediate',
+      programme: 'Junior RIAM (Years 3-4)',
+      instrument: 'Flute',
+      faculty: 'Woodwind',
+      teacher: 'Mr. Liam Keane',
+      enrollmentDate: '2023-09-01',
+      piecesInProgress: ['Bach Minuet', 'Sonatina movement', 'Study No.3']
+    },
+    technicalSkillsCompetence: {
+      score: 70,
+      practicalTechniqueMark: 70,
+      teacherTechnicalAdvice: ['Long tones for steady tone', 'Count rests carefully', 'Scales slow → medium with metronome'],
+      teacherChecklist: {
+        achieved: ['Tone', 'Breath', 'Rhythm'],
+        partial: ['Finger clarity']
+      }
+    },
+    compositionalMusicianshipKnowledge: {
+      score: 72,
+      musicianshipMark: 72,
+      auralEvidenceRecordings: ['sings-5note-patterns.mp3', 'claps-dotted-rhythms.mp3', 'plays-intervals-flute.mp3'],
+      creativeReflectiveNotes: ["Teacher: 'Great listener — needs confidence to improvise small answers.'"]
+    },
+    repertoireCulturalKnowledge: {
+      score: 74,
+      repertoireCulturalMark: 74,
+      listeningLogs: [
+        { piece: 'Bach flute sonatas', composer: 'J.S. Bach', date: '2025-01-08', notes: 'Baroque dance music' }
+      ],
+      contextMeaningNotes: ["Student notes 'dance' feel and lighter articulation in Baroque style."]
+    },
+    performingArtistry: {
+      score: 68,
+      practicalArtistryMark: 68,
+      studentPerformanceReflections: [
+        { date: '2024-12-20', performance: 'Winter recital', reflection: 'I improved, but I rushed the fast section.' }
+      ],
+      teacherPerformancePrepNotes: ["Run 'performance reps': play opening 3 times in a row with calm posture and clear first breath."]
+    }
+  },
+  {
+    studentId: 'S03',
+    profile: {
+      name: { first: 'Ella', last: 'Murphy' },
+      email: 'ella.murphy@riam.student.ie',
+      age: 14,
+      stage: 'Advanced',
+      programme: 'Junior RIAM (Years 5-6)',
+      instrument: 'Piano',
+      faculty: 'Keyboard',
+      teacher: 'Ms. Siobhán Kelly',
+      enrollmentDate: '2021-09-01',
+      piecesInProgress: ['Beethoven Sonatina (1st mvt)', 'Burgmüller Arabesque', 'Scale study']
+    },
+    technicalSkillsCompetence: {
+      score: 82,
+      practicalTechniqueMark: 82,
+      teacherTechnicalAdvice: ['Shape phrases (breathing points)', 'Keep LH lighter', 'Hands-separate for tricky bars'],
+      teacherChecklist: {
+        achieved: ['Posture', 'Balance', 'Articulation', 'Accuracy'],
+        partial: []
+      }
+    },
+    compositionalMusicianshipKnowledge: {
+      score: 80,
+      musicianshipMark: 80,
+      auralEvidenceRecordings: ['melodic-dictation.mp3', 'claps-syncopation.mp3', 'identifies-cadences.mp3'],
+      creativeReflectiveNotes: ["Student: 'I like spotting how harmony supports the melody.'"]
+    },
+    repertoireCulturalKnowledge: {
+      score: 85,
+      repertoireCulturalMark: 85,
+      listeningLogs: [
+        { piece: 'Beethoven piano works', composer: 'Ludwig van Beethoven', date: '2025-01-03', notes: 'Classical clarity vs Romantic colour' },
+        { piece: 'Romantic character pieces', composer: 'Various', date: '2025-01-10', notes: 'Exploring expressive possibilities' }
+      ],
+      contextMeaningNotes: ['Student can describe Classical clarity vs Romantic colour.']
+    },
+    performingArtistry: {
+      score: 78,
+      practicalArtistryMark: 78,
+      studentPerformanceReflections: [
+        { date: '2024-12-18', performance: 'Solo recital', reflection: 'I felt in control — I want more expression in slower sections.' }
+      ],
+      teacherPerformancePrepNotes: ["Agree 2 'story moments' per piece and plan dynamics/rubato around them."]
+    }
+  },
+  {
+    studentId: 'S04',
+    profile: {
+      name: { first: 'Rory', last: 'Fitzpatrick' },
+      email: 'rory.fitzpatrick@riam.student.ie',
+      age: 15,
+      stage: 'Advanced',
+      programme: 'Young Artist Programme',
+      instrument: 'Trumpet',
+      faculty: 'Brass',
+      teacher: 'Mr. David Horan',
+      enrollmentDate: '2022-09-01',
+      piecesInProgress: ['Haydn Concerto (selected mvts)', 'Arban Characteristic Study', 'Orchestral excerpt']
+    },
+    technicalSkillsCompetence: {
+      score: 92,
+      practicalTechniqueMark: 92,
+      teacherTechnicalAdvice: ['Airflow focus in upper register', 'Light articulation', 'Daily long-tone warm‑ups + lip slurs'],
+      teacherChecklist: {
+        achieved: ['Breath', 'Range', 'Articulation', 'Endurance'],
+        partial: []
+      }
+    },
+    compositionalMusicianshipKnowledge: {
+      score: 78,
+      musicianshipMark: 78,
+      auralEvidenceRecordings: ['interval-singing.mp3', 'rhythmic-dictation.mp3', 'modulation-playback-trumpet.mp3'],
+      creativeReflectiveNotes: ["Teacher: 'Technically superb — let's explore composing 8‑bar motifs to deepen musical intent.'"]
+    },
+    repertoireCulturalKnowledge: {
+      score: 76,
+      repertoireCulturalMark: 76,
+      listeningLogs: [
+        { piece: 'Haydn concertos', composer: 'Joseph Haydn', date: '2024-12-28', notes: 'Classical orchestral repertoire' }
+      ],
+      contextMeaningNotes: ['Student identifies concerto form sections and style expectations (clarity, balance).']
+    },
+    performingArtistry: {
+      score: 80,
+      practicalArtistryMark: 80,
+      studentPerformanceReflections: [
+        { date: '2024-12-22', performance: 'Concerto competition', reflection: "I'm confident technically — I want more emotional range." }
+      ],
+      teacherPerformancePrepNotes: ["Choose 3 phrase 'destinations' and practise shaping towards them (not just precision)."]
+    }
+  },
+  {
+    studentId: 'S05',
+    profile: {
+      name: { first: 'Saoirse', last: 'Nolan' },
+      email: 'saoirse.nolan@riam.student.ie',
+      age: 17,
+      stage: 'Advanced',
+      programme: 'Young Artist Programme',
+      instrument: 'Voice',
+      faculty: 'Vocal Studies',
+      teacher: 'Ms. Aisling Byrne',
+      enrollmentDate: '2020-09-01',
+      piecesInProgress: ['Italian art song', 'Musical theatre ballad', 'Irish traditional air']
+    },
+    technicalSkillsCompetence: {
+      score: 85,
+      practicalTechniqueMark: 85,
+      teacherTechnicalAdvice: ['Breath support for long phrases', 'Clear vowels + diction', 'Practise soft, clean entries'],
+      teacherChecklist: {
+        achieved: ['Breath', 'Tone', 'Diction', 'Projection'],
+        partial: []
+      }
+    },
+    compositionalMusicianshipKnowledge: {
+      score: 90,
+      musicianshipMark: 90,
+      auralEvidenceRecordings: ['complex-melodies-back.mp3', 'tonal-memory.mp3', 'compound-rhythms.mp3'],
+      creativeReflectiveNotes: ["Student: 'Lyrics change everything — I journal the character's intention.'"]
+    },
+    repertoireCulturalKnowledge: {
+      score: 92,
+      repertoireCulturalMark: 92,
+      listeningLogs: [
+        { piece: 'Schubert Lieder', composer: 'Franz Schubert', date: '2025-01-02', notes: 'German art song tradition' },
+        { piece: 'Irish folk singers', composer: 'Traditional', date: '2025-01-09', notes: 'Irish sean-nós style' }
+      ],
+      contextMeaningNotes: ['Student connects text, tradition, and storytelling to musical choices.']
+    },
+    performingArtistry: {
+      score: 94,
+      practicalArtistryMark: 94,
+      studentPerformanceReflections: [
+        { date: '2024-12-20', performance: 'Christmas concert', reflection: 'I felt connected to the story and the audience.' }
+      ],
+      teacherPerformancePrepNotes: ["Write 2–3 'key words' per phrase and rehearse intention first, then sound."]
+    }
+  }
+])
+
+// Calculate average score
+const getAverageScore = (student) => {
+  const scores = [
+    student.technicalSkillsCompetence?.score || 0,
+    student.compositionalMusicianshipKnowledge?.score || 0,
+    student.repertoireCulturalKnowledge?.score || 0,
+    student.performingArtistry?.score || 0
+  ]
+  return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length || 0)
+}
+
+// Format students for table display
+const studentsForTable = computed(() => {
+  return students.value.map(s => ({
+    name: `${s.profile.name.first} ${s.profile.name.last}`,
+    studentId: s.studentId,
+    email: s.profile.email,
+    programme: s.profile.programme,
+    averageScore: getAverageScore(s),
+    lastActivity: '-',
+    fullData: s
+  }))
+})
+
+const viewStudent = async (student) => {
+  selectedStudent.value = student.fullData || student
+  showStudentModal.value = true
+  studentDetailTab.value = 'sd-overview'
+  await nextTick()
+  initStudentChart()
+}
+
+const closeStudentModal = () => {
+  showStudentModal.value = false
+  selectedStudent.value = null
+  if (currentStudentChart) {
+    currentStudentChart.destroy()
+    currentStudentChart = null
+  }
+}
+
+const initStudentChart = async () => {
+  if (!selectedStudent.value || !studentChartRef.value) return
+  
+  await nextTick()
+  await new Promise(resolve => setTimeout(resolve, 100))
+  
+  if (currentStudentChart) {
+    currentStudentChart.destroy()
+  }
+  
+  const techScore = selectedStudent.value.technicalSkillsCompetence?.score || 0
+  const compScore = selectedStudent.value.compositionalMusicianshipKnowledge?.score || 0
+  const repScore = selectedStudent.value.repertoireCulturalKnowledge?.score || 0
+  const perfScore = selectedStudent.value.performingArtistry?.score || 0
+  
+  currentStudentChart = new Chart(studentChartRef.value, {
+    type: 'radar',
+    data: {
+      labels: ['Technical Skills', 'Musicianship', 'Repertoire', 'Performing Artistry'],
+      datasets: [{
+        label: 'Scores',
+        data: [techScore, compScore, repScore, perfScore],
+        backgroundColor: 'rgba(105, 52, 126, 0.2)',
+        borderColor: '#69347e',
+        borderWidth: 2,
+        pointBackgroundColor: '#69347e'
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 100
+        }
+      }
+    }
+  })
+}
+
+watch(studentDetailTab, async (newTab) => {
+  if (newTab === 'sd-overview' && showStudentModal.value) {
+    await nextTick()
+    initStudentChart()
+  }
+})
 
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value
@@ -79,14 +414,8 @@ const handleLogout = async () => {
         <a class="nav-link" :class="{ active: activeTab === 'users' }" @click="activeTab = 'users'">
           <i class="bi bi-people"></i>Users
         </a>
-        <a class="nav-link" :class="{ active: activeTab === 'profile' }" @click="activeTab = 'profile'">
-          <i class="bi bi-person-circle"></i>Profile
-        </a>
         <a class="nav-link" :class="{ active: activeTab === 'courses' }" @click="activeTab = 'courses'">
           <i class="bi bi-music-note-beamed"></i>Programmes
-        </a>
-        <a class="nav-link" :class="{ active: activeTab === 'reports' }" @click="activeTab = 'reports'">
-          <i class="bi bi-file-earmark-bar-graph"></i>Reports
         </a>
         <a class="nav-link" :class="{ active: activeTab === 'settings' }" @click="activeTab = 'settings'">
           <i class="bi bi-gear"></i>Settings
@@ -129,13 +458,14 @@ const handleLogout = async () => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>Aoife Byrne</td>
-                      <td>aoife.byrne@riam.student.ie</td>
+                    <tr v-for="student in studentsForTable" :key="student.studentId">
+                      <td>{{ student.name }}</td>
+                      <td>{{ student.email }}</td>
                       <td><span class="badge bg-primary">Student</span></td>
                       <td><span class="badge bg-success">Active</span></td>
                       <td>
-                        <button class="btn btn-sm btn-warning">Edit</button>
+                        <button class="btn btn-sm btn-info me-1" @click="viewStudent(student)">View</button>
+                        <button class="btn btn-sm btn-warning me-1">Edit</button>
                         <button class="btn btn-sm btn-danger">Delete</button>
                       </td>
                     </tr>
@@ -154,56 +484,6 @@ const handleLogout = async () => {
               </div>
             </div>
 
-            <!-- Profile Tab -->
-            <div v-show="activeTab === 'profile'" class="tab-pane fade" :class="{ 'show active': activeTab === 'profile' }">
-              <h4>Admin Profile</h4>
-              <div class="row">
-                <div class="col-md-8">
-                  <div class="card mb-3">
-                    <div class="card-header bg-primary-custom text-white">
-                      <h5 class="mb-0">Personal Information</h5>
-                    </div>
-                    <div class="card-body">
-                      <div class="row mb-3">
-                        <div class="col-md-6">
-                          <label class="form-label text-muted">Name</label>
-                          <p class="fw-bold">{{ preferencesStore.effectiveDisplayName || 'Admin User' }}</p>
-                        </div>
-                        <div class="col-md-6">
-                          <label class="form-label text-muted">Email</label>
-                          <p class="fw-bold">{{ authStore.userEmail || 'admin@riam.ie' }}</p>
-                        </div>
-                      </div>
-                      <div class="row mb-3">
-                        <div class="col-md-6">
-                          <label class="form-label text-muted">Role</label>
-                          <p><span class="badge bg-danger">Administrator</span></p>
-                        </div>
-                        <div class="col-md-6">
-                          <label class="form-label text-muted">Status</label>
-                          <p><span class="badge bg-success">Active</span></p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="card mb-3">
-                    <div class="card-header bg-primary-custom text-white">
-                      <h5 class="mb-0">System Stats</h5>
-                    </div>
-                    <div class="card-body">
-                      <p class="mb-2"><i class="bi bi-people text-primary"></i> <strong>Total Students:</strong> 5</p>
-                      <p class="mb-2"><i class="bi bi-person-badge text-success"></i> <strong>Total Teachers:</strong> 5</p>
-                      <p class="mb-2"><i class="bi bi-music-note-beamed text-info"></i> <strong>Programmes:</strong> 4</p>
-                      <p class="mb-2"><i class="bi bi-eye text-warning"></i> <strong>AI Interactions:</strong> 247</p>
-                      <p class="mb-0"><i class="bi bi-server text-danger"></i> <strong>System Uptime:</strong> 99.8%</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <!-- Programmes Tab -->
             <div v-show="activeTab === 'courses'" class="tab-pane fade" :class="{ 'show active': activeTab === 'courses' }">
               <div class="d-flex justify-content-between align-items-center mb-3">
@@ -217,34 +497,53 @@ const handleLogout = async () => {
                       <h5 class="card-title">Junior RIAM (Years 1-2)</h5>
                       <p class="card-text">Foundation level music education for young students</p>
                       <p class="mb-1"><small class="text-muted">Students: 1</small></p>
+                      <p class="mb-1"><small class="text-muted">Instruments: Violin</small></p>
+                      <p class="mb-1"><small class="text-muted">Stage: Development</small></p>
                       <p class="mb-1"><small class="text-muted">Teacher: Ms. Niamh O'Donnell</small></p>
                       <button class="btn btn-sm btn-warning mt-2">Edit</button>
                       <button class="btn btn-sm btn-danger mt-2">Delete</button>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Reports Tab -->
-            <div v-show="activeTab === 'reports'" class="tab-pane fade" :class="{ 'show active': activeTab === 'reports' }">
-              <h4>System Reports</h4>
-              <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <div class="card">
                     <div class="card-body">
-                      <h5 class="card-title">Enrollment Report</h5>
-                      <p class="card-text">View student enrollment trends and statistics.</p>
-                      <button class="btn btn-primary-custom">Generate Report</button>
+                      <h5 class="card-title">Junior RIAM (Years 3-4)</h5>
+                      <p class="card-text">Intermediate level for developing musicians</p>
+                      <p class="mb-1"><small class="text-muted">Students: 1</small></p>
+                      <p class="mb-1"><small class="text-muted">Instruments: Flute</small></p>
+                      <p class="mb-1"><small class="text-muted">Stage: Intermediate</small></p>
+                      <p class="mb-1"><small class="text-muted">Teacher: Mr. Liam Keane</small></p>
+                      <button class="btn btn-sm btn-warning mt-2">Edit</button>
+                      <button class="btn btn-sm btn-danger mt-2">Delete</button>
                     </div>
                   </div>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <div class="card">
                     <div class="card-body">
-                      <h5 class="card-title">Performance Report</h5>
-                      <p class="card-text">Analyze overall student and teacher performance.</p>
-                      <button class="btn btn-primary-custom">Generate Report</button>
+                      <h5 class="card-title">Junior RIAM (Years 5-6)</h5>
+                      <p class="card-text">Advanced junior level for experienced students</p>
+                      <p class="mb-1"><small class="text-muted">Students: 1</small></p>
+                      <p class="mb-1"><small class="text-muted">Instruments: Piano</small></p>
+                      <p class="mb-1"><small class="text-muted">Stage: Advanced</small></p>
+                      <p class="mb-1"><small class="text-muted">Teacher: Ms. Siobhán Kelly</small></p>
+                      <button class="btn btn-sm btn-warning mt-2">Edit</button>
+                      <button class="btn btn-sm btn-danger mt-2">Delete</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <div class="card">
+                    <div class="card-body">
+                      <h5 class="card-title">Young Artist Programme</h5>
+                      <p class="card-text">Elite programme for pre-professional musicians</p>
+                      <p class="mb-1"><small class="text-muted">Students: 2</small></p>
+                      <p class="mb-1"><small class="text-muted">Instruments: Trumpet, Voice</small></p>
+                      <p class="mb-1"><small class="text-muted">Stage: Advanced</small></p>
+                      <p class="mb-1"><small class="text-muted">Teachers: Mr. David Horan, Ms. Aisling Byrne</small></p>
+                      <button class="btn btn-sm btn-warning mt-2">Edit</button>
+                      <button class="btn btn-sm btn-danger mt-2">Delete</button>
                     </div>
                   </div>
                 </div>
@@ -337,6 +636,268 @@ const handleLogout = async () => {
     <button class="sidebar-toggle" @click="toggleSidebar">
       <i class="bi bi-list"></i>
     </button>
+
+    <!-- Student Detail Modal -->
+    <div v-if="showStudentModal && selectedStudent" class="modal fade show" :class="{ 'd-block': showStudentModal }" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Student Details</h5>
+            <button type="button" class="btn-close" @click="closeStudentModal"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Student Info Header -->
+            <div class="card mb-3">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <p class="mb-1"><strong>Name:</strong> {{ selectedStudent.profile.name.first }} {{ selectedStudent.profile.name.last }}</p>
+                  </div>
+                  <div class="col-md-3">
+                    <p class="mb-1"><strong>ID:</strong> {{ selectedStudent.studentId }}</p>
+                  </div>
+                  <div class="col-md-3">
+                    <p class="mb-1"><strong>Age:</strong> {{ selectedStudent.profile.age }}</p>
+                  </div>
+                  <div class="col-md-3">
+                    <p class="mb-1"><strong>Stage:</strong> <span class="badge bg-info">{{ selectedStudent.profile.stage }}</span></p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="mb-1"><strong>Programme:</strong> {{ selectedStudent.profile.programme }}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="mb-1"><strong>Instrument:</strong> {{ selectedStudent.profile.instrument }}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="mb-1"><strong>Faculty:</strong> {{ selectedStudent.profile.faculty }}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="mb-0"><strong>Email:</strong> {{ selectedStudent.profile.email }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabs for Student Detail -->
+            <ul class="nav nav-tabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" :class="{ active: studentDetailTab === 'sd-overview' }" @click="studentDetailTab = 'sd-overview'">Overview & Scores</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" :class="{ active: studentDetailTab === 'sd-goals' }" @click="studentDetailTab = 'sd-goals'">Goal Progress</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" :class="{ active: studentDetailTab === 'sd-uploads' }" @click="studentDetailTab = 'sd-uploads'">Uploads</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" :class="{ active: studentDetailTab === 'sd-personal' }" @click="studentDetailTab = 'sd-personal'">Personal Journal</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" :class="{ active: studentDetailTab === 'sd-professional' }" @click="studentDetailTab = 'sd-professional'">Professional Journal</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" :class="{ active: studentDetailTab === 'sd-feedbacks' }" @click="studentDetailTab = 'sd-feedbacks'">Feedbacks</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" :class="{ active: studentDetailTab === 'sd-ai-summary' }" @click="studentDetailTab = 'sd-ai-summary'">AI Summary</button>
+              </li>
+            </ul>
+
+            <div class="tab-content mt-3">
+              <!-- Overview & Scores Tab -->
+              <div v-show="studentDetailTab === 'sd-overview'" class="tab-pane fade" :class="{ 'show active': studentDetailTab === 'sd-overview' }">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <h6>Accordo AI Quadrant Scores</h6>
+                    <canvas ref="studentChartRef" id="studentQuadrantChart" class="chart-container"></canvas>
+                  </div>
+                  <div class="col-md-6">
+                    <h6>Score Breakdown</h6>
+                    <ul class="list-group">
+                      <li class="list-group-item d-flex justify-content-between">
+                        <span>Technical Skills & Competence</span>
+                        <span class="badge bg-primary">{{ selectedStudent.technicalSkillsCompetence?.score || 0 }}</span>
+                      </li>
+                      <li class="list-group-item d-flex justify-content-between">
+                        <span>Compositional & Musicianship Knowledge</span>
+                        <span class="badge bg-primary">{{ selectedStudent.compositionalMusicianshipKnowledge?.score || 0 }}</span>
+                      </li>
+                      <li class="list-group-item d-flex justify-content-between">
+                        <span>Repertoire & Cultural Knowledge</span>
+                        <span class="badge bg-primary">{{ selectedStudent.repertoireCulturalKnowledge?.score || 0 }}</span>
+                      </li>
+                      <li class="list-group-item d-flex justify-content-between">
+                        <span>Performing Artistry</span>
+                        <span class="badge bg-primary">{{ selectedStudent.performingArtistry?.score || 0 }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-12">
+                    <h6>Teacher Technical Advice</h6>
+                    <ul class="list-unstyled">
+                      <li v-if="selectedStudent.technicalSkillsCompetence?.teacherTechnicalAdvice?.length > 0">
+                        <strong>Technical Advice:</strong>
+                        <ul>
+                          <li v-for="advice in selectedStudent.technicalSkillsCompetence.teacherTechnicalAdvice" :key="advice">
+                            <i class="bi bi-check-circle text-success"></i> {{ advice }}
+                          </li>
+                        </ul>
+                      </li>
+                      <li v-if="selectedStudent.technicalSkillsCompetence?.teacherChecklist" class="mt-2">
+                        <strong>Teacher Checklist:</strong>
+                        <div v-if="selectedStudent.technicalSkillsCompetence.teacherChecklist.achieved?.length > 0" class="mt-1">
+                          <span class="text-success">✓ Achieved:</span> {{ selectedStudent.technicalSkillsCompetence.teacherChecklist.achieved.join(', ') }}
+                        </div>
+                        <div v-if="selectedStudent.technicalSkillsCompetence.teacherChecklist.partial?.length > 0" class="mt-1">
+                          <span class="text-warning">◐ Partial:</span> {{ selectedStudent.technicalSkillsCompetence.teacherChecklist.partial.join(', ') }}
+                        </div>
+                      </li>
+                      <li v-if="!selectedStudent.technicalSkillsCompetence?.teacherTechnicalAdvice?.length && !selectedStudent.technicalSkillsCompetence?.teacherChecklist" class="text-muted">
+                        No advice recorded
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Goal Progress Tab -->
+              <div v-show="studentDetailTab === 'sd-goals'" class="tab-pane fade" :class="{ 'show active': studentDetailTab === 'sd-goals' }">
+                <div class="alert alert-info">
+                  <strong>Stage Progression:</strong> Students progress through stages based on positive feedback from teachers.
+                </div>
+                <div v-if="selectedStudent.profile.piecesInProgress?.length > 0">
+                  <div v-for="(goal, index) in selectedStudent.profile.piecesInProgress" :key="goal" class="card mb-2">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <h6 class="mb-1">{{ goal }}</h6>
+                          <div class="progress" style="width: 200px;">
+                            <div class="progress-bar bg-primary-custom" role="progressbar" :style="`width: ${(index+1)*25}%`">{{ (index+1)*25 }}%</div>
+                          </div>
+                          <small class="text-muted">Stage: {{ index+1 }} of 4</small>
+                        </div>
+                        <div>
+                          <button class="btn btn-sm btn-success">
+                            <i class="bi bi-arrow-up-circle"></i> Progress Stage
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-muted">No goals assigned yet</p>
+              </div>
+
+              <!-- Uploads Tab -->
+              <div v-show="studentDetailTab === 'sd-uploads'" class="tab-pane fade" :class="{ 'show active': studentDetailTab === 'sd-uploads' }">
+                <div class="table-responsive">
+                  <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>File Name</th>
+                        <th>Type</th>
+                        <th>Upload Date</th>
+                        <th>AI Analysis</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-if="selectedStudent.compositionalMusicianshipKnowledge?.auralEvidenceRecordings?.length > 0" v-for="(rec, idx) in selectedStudent.compositionalMusicianshipKnowledge.auralEvidenceRecordings" :key="idx">
+                        <td><i class="bi bi-file-music"></i> {{ rec }}</td>
+                        <td>Audio</td>
+                        <td>Jan {{ 10 + idx }}, 2026</td>
+                        <td><span class="badge bg-success">Analyzed</span></td>
+                        <td><button class="btn btn-sm btn-info">View</button></td>
+                      </tr>
+                      <tr v-else>
+                        <td colspan="5" class="text-muted text-center">No uploads yet</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Personal Journal Tab -->
+              <div v-show="studentDetailTab === 'sd-personal'" class="tab-pane fade" :class="{ 'show active': studentDetailTab === 'sd-personal' }">
+                <div v-if="selectedStudent.compositionalMusicianshipKnowledge?.creativeReflectiveNotes?.length > 0">
+                  <div v-for="note in selectedStudent.compositionalMusicianshipKnowledge.creativeReflectiveNotes" :key="note" class="card mb-2">
+                    <div class="card-body">
+                      <h6>Musicianship Reflection</h6>
+                      <p class="mb-0">{{ note }}</p>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-muted">No personal journal entries yet</p>
+              </div>
+
+              <!-- Professional Journal Tab -->
+              <div v-show="studentDetailTab === 'sd-professional'" class="tab-pane fade" :class="{ 'show active': studentDetailTab === 'sd-professional' }">
+                <div v-if="selectedStudent.performingArtistry?.studentPerformanceReflections?.length > 0">
+                  <div v-for="refl in selectedStudent.performingArtistry.studentPerformanceReflections" :key="refl.date" class="card mb-2">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between">
+                        <h6>{{ refl.performance }}</h6>
+                        <small class="text-muted">{{ refl.date }}</small>
+                      </div>
+                      <p class="mb-0">{{ refl.reflection }}</p>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-muted">No professional journal entries yet</p>
+              </div>
+
+              <!-- Feedbacks Tab -->
+              <div v-show="studentDetailTab === 'sd-feedbacks'" class="tab-pane fade" :class="{ 'show active': studentDetailTab === 'sd-feedbacks' }">
+                <div v-if="selectedStudent.performingArtistry?.teacherPerformancePrepNotes?.length > 0">
+                  <div v-for="(note, idx) in selectedStudent.performingArtistry.teacherPerformancePrepNotes" :key="idx" class="card mb-2">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between">
+                        <div>
+                          <h6>{{ selectedStudent.profile.programme }} - Performance Preparation</h6>
+                          <p class="mb-1"><strong>Teacher Guidance:</strong></p>
+                          <p class="mb-0">{{ note }}</p>
+                        </div>
+                        <small class="text-muted">Jan {{ 11 + idx }}, 2026</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-muted">No feedback given yet</p>
+              </div>
+
+              <!-- AI Summary Tab -->
+              <div v-show="studentDetailTab === 'sd-ai-summary'" class="tab-pane fade" :class="{ 'show active': studentDetailTab === 'sd-ai-summary' }">
+                <div class="card">
+                  <div class="card-body">
+                    <h6 class="card-title">AI-Generated Progress Summary</h6>
+                    <div>
+                      <p><strong>Overall Progress:</strong> {{ selectedStudent.profile.name.first }} ({{ selectedStudent.profile.age }} years old, {{ selectedStudent.profile.stage }} stage) has an average score of {{ getAverageScore(selectedStudent) }} across all quadrants.</p>
+                      <p><strong>Enrolled:</strong> {{ selectedStudent.profile.enrollmentDate }} in {{ selectedStudent.profile.programme }}</p>
+                      <p><strong>Current Repertoire:</strong> Working on {{ selectedStudent.profile.piecesInProgress?.length || 0 }} pieces: {{ selectedStudent.profile.piecesInProgress?.join(', ') || 'None' }}</p>
+                      <p><strong>Listening Activity:</strong> {{ selectedStudent.repertoireCulturalKnowledge?.listeningLogs?.length || 0 }} listening log entries recorded</p>
+                      <p><strong>Performance History:</strong> {{ selectedStudent.performingArtistry?.studentPerformanceReflections?.length || 0 }} performance reflections documented</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="card mt-3">
+                  <div class="card-body">
+                    <h6 class="card-title">Identified Issues & Recommendations</h6>
+                    <div>
+                      <p class="text-success mb-0"><i class="bi bi-check-circle"></i> Excellent progress across all areas. Student is well-rounded and performing above expectations.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeStudentModal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

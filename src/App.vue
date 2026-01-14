@@ -69,9 +69,9 @@ watch(
         await preferencesStore.loadPreferences()
       }
     } else {
-      // Apply default system theme when logged out
-      preferencesStore.theme = 'system'
-      preferencesStore.applyTheme('system')
+      // Apply default light theme when logged out
+      preferencesStore.theme = 'light'
+      preferencesStore.applyTheme('light')
     }
   },
   { immediate: true },
