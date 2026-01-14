@@ -26,7 +26,9 @@ const handleLogin = async (userType) => {
   // Use both sessionStorage and localStorage to ensure it persists through Cognito redirect
   sessionStorage.setItem('userRole', userType)
   localStorage.setItem('userRole', userType)
-  console.log('Storing user role:', userType)
+  console.log('🔐 Storing user role for redirect:', userType)
+  console.log('📦 Stored in sessionStorage:', sessionStorage.getItem('userRole'))
+  console.log('📦 Stored in localStorage:', localStorage.getItem('userRole'))
   // Redirect to Cognito login
   await authStore.login()
 }
@@ -141,13 +143,13 @@ const handleAdminLogin = () => {
                 <div v-show="activeTab === 'staff'" class="tab-pane fade" :class="{ 'show active': activeTab === 'staff' }">
                   <form @submit.prevent="handleStaffLogin">
                     <div class="mb-3">
-                      <label for="staffEmail" class="form-label">Email Address</label>
+                      <label for="staffEmail" class="form-label">Email or Username</label>
                       <input
-                        type="email"
+                        type="text"
                         class="form-control"
                         id="staffEmail"
                         v-model="staffEmail"
-                        placeholder="Enter your email"
+                        placeholder="Enter your email or username"
                         required
                       />
                     </div>
@@ -184,13 +186,13 @@ const handleAdminLogin = () => {
                 <div v-show="activeTab === 'admin'" class="tab-pane fade" :class="{ 'show active': activeTab === 'admin' }">
                   <form @submit.prevent="handleAdminLogin">
                     <div class="mb-3">
-                      <label for="adminEmail" class="form-label">Email Address</label>
+                      <label for="adminEmail" class="form-label">Email or Username</label>
                       <input
-                        type="email"
+                        type="text"
                         class="form-control"
                         id="adminEmail"
                         v-model="adminEmail"
-                        placeholder="Enter your admin email"
+                        placeholder="Enter your email or username"
                         required
                       />
                     </div>

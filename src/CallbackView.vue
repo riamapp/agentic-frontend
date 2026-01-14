@@ -38,37 +38,32 @@ onMounted(async () => {
       }
 
       // Determine user role and redirect to appropriate dashboard
-      // First check if role was stored from login tab selection
       // Check both sessionStorage and localStorage (in case sessionStorage was cleared)
       let userRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole')
       
-      console.log('Retrieved user role from storage:', userRole)
+      console.log('🔍 Checking stored role after auth...')
+      console.log('📦 sessionStorage userRole:', sessionStorage.getItem('userRole'))
+      console.log('📦 localStorage userRole:', localStorage.getItem('userRole'))
+      console.log('✅ Selected role:', userRole)
       
-      // TODO: Later, get role from token claims or backend API
-      // For now, use the role from login tab selection
-      if (userRole) {
-        // Keep role in localStorage for future sessions (until logout)
-        // Don't remove it here - we'll clear it on logout
-        localStorage.setItem('userRole', userRole)
-        
-        // Map role to dashboard route
-        let dashboardRoute = '/student' // Default
-        if (userRole === 'student') {
-          dashboardRoute = '/student'
-        } else if (userRole === 'teacher') {
-          dashboardRoute = '/teacher'
-        } else if (userRole === 'admin') {
-          dashboardRoute = '/admin'
-        }
-        
-        console.log('Redirecting to dashboard based on role:', userRole, '->', dashboardRoute)
-        router.push(dashboardRoute)
-      } else {
-        // Default: redirect to student dashboard if no role stored
-        // TODO: Get role from backend/token in future
-        console.log('No role stored, redirecting to student dashboard...')
-        router.push('/student')
+      // Map role to dashboard route based on button clicked
+      let dashboardRoute = '/student' // Default fallback
+      
+      if (userRole === 'student') {
+        dashboardRoute = '/student'
+      } else if (userRole === 'teacher') {
+        dashboardRoute = '/teacher'
+      } else if (userRole === 'admin') {
+        dashboardRoute = '/admin'
       }
+      
+      // Keep role in localStorage for future sessions (until logout)
+      if (userRole) {
+        localStorage.setItem('userRole', userRole)
+      }
+      
+      console.log('🚀 Redirecting to dashboard:', dashboardRoute, 'based on role:', userRole)
+      router.push(dashboardRoute)
     } catch (err) {
       console.error('Callback error:', err)
       console.error('Auth store error:', authStore.error)
