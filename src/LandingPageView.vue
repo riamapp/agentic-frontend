@@ -32,7 +32,7 @@ onMounted(() => {
     <nav class="modern-nav" id="navbar">
       <div class="nav-container">
         <RouterLink to="/" class="nav-logo d-flex align-items-center">
-          <img src="/RIAM_Logo_White.png" alt="RIAM Logo" style="height: 45px; margin-right: 12px; filter: brightness(0);" />
+          <img src="/Riam Logo.png" alt="RIAM Logo" style="height: 60px; margin-right: 12px;" />
           <div class="logo-text" style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
             Accordo AI
           </div>
