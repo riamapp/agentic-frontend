@@ -42,3 +42,5 @@ bucket-policy.json
 
 # Optional: Uncomment to keep deploy.config.js private (use environment variables instead)
 deploy.config.js
+
+Agentic-Frontend-UI/

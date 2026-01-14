@@ -6,7 +6,32 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      component: () => import('@/HomeView.vue'),
+      component: () => import('@/LandingPageView.vue'),
+    },
+    {
+      path: '/login',
+      component: () => import('@/LoginView.vue'),
+      meta: { requiresGuest: true },
+    },
+    {
+      path: '/signup',
+      component: () => import('@/SignupView.vue'),
+      meta: { requiresGuest: true },
+    },
+    {
+      path: '/student',
+      component: () => import('@/StudentDashboardView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/teacher',
+      component: () => import('@/TeacherDashboardView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/admin',
+      component: () => import('@/AdminDashboardView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/account',
@@ -26,11 +51,6 @@ const router = createRouter({
       path: '/auth/google/callback',
       component: () => import('@/GoogleCallbackView.vue'),
     },
-    {
-      path: '/login',
-      component: () => import('@/LoginView.vue'),
-      meta: { requiresGuest: true },
-    },
   ],
 })
 
@@ -45,13 +65,34 @@ router.beforeEach(async (to, from, next) => {
 
   await authStore.checkAuth()
 
+  // If authenticated user visits landing page, redirect to their dashboard
+  if (to.path === '/' && authStore.isAuthenticated) {
+    // Try to get role from localStorage or sessionStorage, default to student
+    const userRole = localStorage.getItem('userRole') || sessionStorage.getItem('userRole') || 'student'
+    const dashboardRoute = userRole === 'student' ? '/student' 
+                          : userRole === 'teacher' ? '/teacher'
+                          : userRole === 'admin' ? '/admin'
+                          : '/student'
+    console.log('Authenticated user visiting landing page, redirecting to:', dashboardRoute, 'based on role:', userRole)
+    next(dashboardRoute)
+    return
+  }
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     // Store the intended route so we can redirect back after login
     sessionStorage.setItem('authRedirect', to.fullPath)
     authStore.login() // Redirect to Cognito hosted UI
     return
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next('/')
+    // If authenticated user tries to access guest pages (login/signup), redirect to their dashboard
+    // Check for stored role or default to student
+    const userRole = localStorage.getItem('userRole') || sessionStorage.getItem('userRole') || 'student'
+    const dashboardRoute = userRole === 'student' ? '/student' 
+                          : userRole === 'teacher' ? '/teacher'
+                          : userRole === 'admin' ? '/admin'
+                          : '/student'
+    console.log('Authenticated user accessing guest page, redirecting to:', dashboardRoute, 'based on role:', userRole)
+    next(dashboardRoute)
   } else {
     next()
   }

@@ -1,15 +1,31 @@
 <script setup>
-import { watch, onMounted, nextTick, ref, computed } from 'vue'
+import { watch, computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useToast } from '@/composables/useToast'
 import { useImages } from '@/composables/useImages'
 
+const route = useRoute()
 const authStore = useAuthStore()
 const preferencesStore = usePreferencesStore()
 const { toasts, removeToast } = useToast()
 const { fetchImageUrl } = useImages()
 const headerPictureUrl = ref(null)
+
+// Check if current route is a dashboard route (has its own layout)
+const isDashboardRoute = computed(() => {
+  return route.path.startsWith('/student') || 
+         route.path.startsWith('/teacher') || 
+         route.path.startsWith('/admin')
+})
+
+// Check if current route is a simple page (landing, login, signup)
+const isSimplePage = computed(() => {
+  return route.path === '/' || 
+         route.path === '/login' || 
+         route.path === '/signup'
+})
 
 // Computed effective picture for header
 const effectivePicture = computed(() => {
@@ -63,10 +79,17 @@ watch(
 </script>
 
 <template>
-  <div class="min-vh-100">
+  <!-- Dashboard routes have their own layout built-in -->
+  <RouterView v-if="isDashboardRoute" />
+
+  <!-- Simple pages (landing, login, signup) have no wrapper -->
+  <RouterView v-else-if="isSimplePage" />
+
+  <!-- Other pages (account, agent) use the default layout -->
+  <div v-else class="min-vh-100">
     <nav class="navbar navbar-expand-lg border-bottom border-body">
       <div class="container">
-        <a class="navbar-brand" href="/">Agentic PoC</a>
+        <RouterLink to="/" class="navbar-brand">Agentic PoC</RouterLink>
         <button
           class="navbar-toggler"
           type="button"

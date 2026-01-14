@@ -146,6 +146,9 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('refreshToken')
       // Clear chat messages from localStorage on logout
       localStorage.removeItem('agent-chat-messages')
+      // Clear user role on logout
+      localStorage.removeItem('userRole')
+      sessionStorage.removeItem('userRole')
     },
 
     async logout() {

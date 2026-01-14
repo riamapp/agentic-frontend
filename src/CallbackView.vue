@@ -34,9 +34,40 @@ onMounted(async () => {
         sessionStorage.removeItem('authRedirect')
         console.log('Redirecting to stored route:', redirectRoute)
         router.push(redirectRoute)
+        return
+      }
+
+      // Determine user role and redirect to appropriate dashboard
+      // First check if role was stored from login tab selection
+      // Check both sessionStorage and localStorage (in case sessionStorage was cleared)
+      let userRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole')
+      
+      console.log('Retrieved user role from storage:', userRole)
+      
+      // TODO: Later, get role from token claims or backend API
+      // For now, use the role from login tab selection
+      if (userRole) {
+        // Keep role in localStorage for future sessions (until logout)
+        // Don't remove it here - we'll clear it on logout
+        localStorage.setItem('userRole', userRole)
+        
+        // Map role to dashboard route
+        let dashboardRoute = '/student' // Default
+        if (userRole === 'student') {
+          dashboardRoute = '/student'
+        } else if (userRole === 'teacher') {
+          dashboardRoute = '/teacher'
+        } else if (userRole === 'admin') {
+          dashboardRoute = '/admin'
+        }
+        
+        console.log('Redirecting to dashboard based on role:', userRole, '->', dashboardRoute)
+        router.push(dashboardRoute)
       } else {
-        console.log('No stored route, redirecting to home...')
-        router.push('/')
+        // Default: redirect to student dashboard if no role stored
+        // TODO: Get role from backend/token in future
+        console.log('No role stored, redirecting to student dashboard...')
+        router.push('/student')
       }
     } catch (err) {
       console.error('Callback error:', err)
