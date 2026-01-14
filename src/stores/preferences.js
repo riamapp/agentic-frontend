@@ -10,6 +10,7 @@ export const usePreferencesStore = defineStore('preferences', {
     theme: null, // 'light', 'dark', or 'system'
     displayName: null,
     displayPicture: null, // S3 key for user's custom profile picture
+    studentId: null, // Student ID for file uploads
     loading: false,
     error: null,
   }),
@@ -85,6 +86,7 @@ export const usePreferencesStore = defineStore('preferences', {
             this.theme = null
             this.displayName = null
             this.displayPicture = null
+            this.studentId = null
             return
           }
           const errorText = await response.text().catch(() => '')
@@ -99,6 +101,7 @@ export const usePreferencesStore = defineStore('preferences', {
         // This allows effectiveDisplayName getter to handle the fallback
         this.displayName = preferences.displayName || null
         this.displayPicture = preferences.displayPicture || null
+        this.studentId = preferences.studentId || null
 
         // Apply theme if loaded
         if (this.theme) {
@@ -137,9 +140,10 @@ export const usePreferencesStore = defineStore('preferences', {
           )
         }
 
-        // Preserve displayName and displayPicture when updating theme
+        // Preserve displayName, displayPicture, and studentId when updating theme
         const currentDisplayName = this.displayName || null
         const currentDisplayPicture = this.displayPicture || null
+        const currentStudentId = this.studentId || null
         const url = `${awsConfig.apiGatewayUrl}/user/preferences`
         const response = await fetch(url, {
           method: 'PUT',
@@ -151,6 +155,7 @@ export const usePreferencesStore = defineStore('preferences', {
             theme,
             displayName: currentDisplayName,
             displayPicture: currentDisplayPicture,
+            studentId: currentStudentId,
           }),
         })
 
@@ -192,9 +197,10 @@ export const usePreferencesStore = defineStore('preferences', {
           )
         }
 
-        // Get current preferences to preserve theme and displayPicture
+        // Get current preferences to preserve theme, displayPicture, and studentId
         const currentTheme = this.theme || 'system'
         const currentDisplayPicture = this.displayPicture || null
+        const currentStudentId = this.studentId || null
         const url = `${awsConfig.apiGatewayUrl}/user/preferences`
         const response = await fetch(url, {
           method: 'PUT',
@@ -206,6 +212,7 @@ export const usePreferencesStore = defineStore('preferences', {
             theme: currentTheme,
             displayName,
             displayPicture: currentDisplayPicture,
+            studentId: currentStudentId,
           }),
         })
 
@@ -244,9 +251,10 @@ export const usePreferencesStore = defineStore('preferences', {
           )
         }
 
-        // Get current preferences to preserve theme and displayName
+        // Get current preferences to preserve theme, displayName, and studentId
         const currentTheme = this.theme || 'system'
         const currentDisplayName = this.displayName || null
+        const currentStudentId = this.studentId || null
         const url = `${awsConfig.apiGatewayUrl}/user/preferences`
         const response = await fetch(url, {
           method: 'PUT',
@@ -258,6 +266,7 @@ export const usePreferencesStore = defineStore('preferences', {
             theme: currentTheme,
             displayName: currentDisplayName,
             displayPicture,
+            studentId: currentStudentId,
           }),
         })
 
@@ -270,6 +279,60 @@ export const usePreferencesStore = defineStore('preferences', {
 
         const preferences = await response.json()
         this.displayPicture = preferences.displayPicture || displayPicture
+      } catch (err) {
+        this.error = err.message
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async updateStudentId(studentId) {
+      const authStore = useAuthStore()
+      const accessToken = await authStore.getAccessToken()
+
+      if (!accessToken) {
+        throw new Error('No access token available')
+      }
+
+      this.loading = true
+      this.error = null
+
+      try {
+        if (!awsConfig.apiGatewayUrl) {
+          throw new Error(
+            'API Gateway URL is not configured. Please set VITE_USER_API_GATEWAY_URL in your .env file',
+          )
+        }
+
+        // Get current preferences to preserve theme, displayName, and displayPicture
+        const currentTheme = this.theme || 'system'
+        const currentDisplayName = this.displayName || null
+        const currentDisplayPicture = this.displayPicture || null
+        const url = `${awsConfig.apiGatewayUrl}/user/preferences`
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            theme: currentTheme,
+            displayName: currentDisplayName,
+            displayPicture: currentDisplayPicture,
+            studentId,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '')
+          const errorMessage = errorText || `HTTP ${response.status} ${response.statusText}`
+          console.error('Failed to update student ID:', response.status, errorMessage)
+          throw new Error(`Failed to update student ID: ${response.status} - ${errorMessage}`)
+        }
+
+        const preferences = await response.json()
+        this.studentId = preferences.studentId || studentId
       } catch (err) {
         this.error = err.message
         throw err

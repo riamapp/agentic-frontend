@@ -189,7 +189,7 @@ const handleLogout = async () => {
                       <label for="goalClass" class="form-label">Select Programme/Student</label>
                       <select class="form-select" id="goalClass">
                         <option>Junior RIAM (Years 1–2) - All Students</option>
-                        <option>Individual: Aoife Byrne (S01)</option>
+                        <option>Individual: Aoife Byrne (1)</option>
                       </select>
                     </div>
                     <div class="mb-3">
@@ -289,7 +289,7 @@ const handleLogout = async () => {
                     <div class="mb-3">
                       <label for="feedbackStudent" class="form-label">Select Student</label>
                       <select class="form-select" id="feedbackStudent">
-                        <option>Aoife Byrne (S01)</option>
+                        <option>Aoife Byrne (1)</option>
                       </select>
                     </div>
                     <div class="mb-3">
