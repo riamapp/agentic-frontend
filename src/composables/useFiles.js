@@ -2,12 +2,13 @@ import { useAuthStore } from '@/stores/auth'
 import { awsConfig } from '@/config/aws-config'
 
 export function useFiles() {
-  // Upload file to S3 via presigned URL, returns the key
+  // Upload file to S3 via presigned URL, returns the key (same pattern as AccountView)
+  // Note: studentId parameter is kept for consistency but backend gets it from user preferences
   const uploadFile = async (file, studentId) => {
     const authStore = useAuthStore()
 
     if (!file) throw new Error('No file provided')
-    if (!studentId) throw new Error('Student ID is required')
+    // Note: studentId validation removed - backend gets it from user preferences
 
     const accessToken = await authStore.getAccessToken()
 
@@ -16,13 +17,15 @@ export function useFiles() {
     }
 
     try {
-      if (!awsConfig.apiGatewayUrl) {
+      if (!awsConfig.agentApiGatewayUrl) {
         throw new Error(
-          'API Gateway URL is not configured. Please set VITE_USER_API_GATEWAY_URL in your .env file',
+          'Agent API Gateway URL is not configured. Please set VITE_AGENT_API_GATEWAY_URL in your .env file',
         )
       }
 
-      // Step 1: Request presigned URL from backend
+      // Step 1: Request presigned URL from backend with JSON payload
+      // Backend gets studentId from user preferences, not from request body
+      console.log('📦 Requesting presigned URL for:', file.name)
       const url = `${awsConfig.agentApiGatewayUrl}/feedback/upload-url`
       const urlResponse = await fetch(url, {
         method: 'POST',
@@ -33,23 +36,27 @@ export function useFiles() {
         body: JSON.stringify({
           fileName: file.name,
           contentType: file.type,
-          studentId: studentId,
+          // Note: studentId is retrieved by backend from user preferences
         }),
       })
 
       if (!urlResponse.ok) {
         const errorText = await urlResponse.text().catch(() => '')
         const errorMessage = errorText || `HTTP ${urlResponse.status} ${urlResponse.statusText}`
-        console.error('Failed to get upload URL:', urlResponse.status, errorMessage)
-        throw new Error(`Failed to get upload URL: ${urlResponse.status} - ${errorMessage}`)
+        console.error('❌ Failed to get presigned URL:', urlResponse.status, errorMessage)
+        throw new Error(`Failed to get presigned URL: ${urlResponse.status} - ${errorMessage}`)
       }
 
-      const { uploadUrl, key } = await urlResponse.json()
+      const responseData = await urlResponse.json()
+      console.log('📦 Presigned URL Response:', responseData)
+
+      const { uploadUrl, key } = responseData
       if (!uploadUrl || !key) {
-        throw new Error('Invalid upload URL response')
+        throw new Error('Invalid response: missing uploadUrl or key')
       }
 
-      // Step 2: Upload file directly to S3 using presigned URL
+      // Step 2: PUT the file to S3 using the presigned URL (exact same as useImages.js)
+      console.log('📤 Uploading to S3:', key)
       const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
         headers: {
@@ -61,10 +68,24 @@ export function useFiles() {
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text().catch(() => '')
         const errorMessage = errorText || `HTTP ${uploadResponse.status} ${uploadResponse.statusText}`
-        console.error('Failed to upload file to S3:', uploadResponse.status, errorMessage)
-        throw new Error(`Failed to upload file to S3: ${uploadResponse.status} - ${errorMessage}`)
+        console.error('❌ S3 upload failed:', uploadResponse.status, errorMessage)
+        console.error('Upload URL:', uploadUrl.substring(0, 100) + '...')
+        console.error('File type:', file.type)
+        console.error('File name:', file.name)
+        
+        // Provide more helpful error message for CORS issues
+        if (uploadResponse.status === 403 || uploadResponse.status === 0) {
+          throw new Error(
+            `CORS error: S3 bucket CORS configuration may be missing. ` +
+            `Please ensure the S3 bucket allows PUT requests from this origin. ` +
+            `Status: ${uploadResponse.status} - ${errorMessage}`
+          )
+        }
+        
+        throw new Error(`S3 upload failed: ${uploadResponse.status} - ${errorMessage}`)
       }
 
+      console.log('✅ File uploaded successfully to S3. Key:', key)
       return key
     } catch (err) {
       console.error('Error uploading file:', err)
