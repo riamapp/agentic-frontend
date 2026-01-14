@@ -1,18 +1,28 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useImages } from '@/composables/useImages'
+import { useFiles } from '@/composables/useFiles'
 import AgentView from '@/AgentView.vue'
 
 const authStore = useAuthStore()
 const preferencesStore = usePreferencesStore()
 const { fetchImageUrl } = useImages()
+const { uploadFile, fetchFileUrl, deleteFile, getFeedback, listFiles } = useFiles()
 
 const activeTab = ref('overview')
 const sidebarOpen = ref(false)
 const profilePictureUrl = ref(null)
+
+// File upload state
+const fileInputRef = ref(null)
+const uploadingFile = ref(false)
+const files = ref([])
+const loadingFiles = ref(false)
+const feedbackLoading = ref({}) // Track which file is loading feedback
+const fileFeedbacks = ref({}) // Store feedback for each file
 
 // Student data (mock - will be replaced with API calls later)
 const studentInfo = ref({
@@ -28,13 +38,142 @@ const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value
 }
 
-// Load profile picture
+// Load profile picture and files
 onMounted(async () => {
   if (preferencesStore.displayPicture) {
     const url = await fetchImageUrl(preferencesStore.displayPicture)
     profilePictureUrl.value = url
   } else if (authStore.userPicture) {
     profilePictureUrl.value = authStore.userPicture
+  }
+  
+  // Load files when uploads tab might be accessed
+  if (activeTab.value === 'uploads') {
+    await loadFiles()
+  }
+})
+
+  // Load files from backend
+const loadFiles = async () => {
+  loadingFiles.value = true
+  try {
+    const fileList = await listFiles()
+    files.value = fileList.map(file => ({
+      ...file,
+      uploadDate: file.uploadDate || file.createdAt || new Date().toISOString()
+    }))
+  } catch (err) {
+    console.error('Failed to load files:', err)
+  } finally {
+    loadingFiles.value = false
+  }
+}
+
+// Handle file selection
+const handleFileSelect = () => {
+  fileInputRef.value?.click()
+}
+
+// Handle file input change
+const handleFileChange = async (event) => {
+  const file = event.target.files?.[0] || null
+  if (!file) return
+
+  // Reset input
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
+
+  await uploadFileToS3(file)
+}
+
+// Upload file to S3
+const uploadFileToS3 = async (file) => {
+  uploadingFile.value = true
+  try {
+    const fileKey = await uploadFile(file)
+    
+    // Add file to list
+    const newFile = {
+      key: fileKey,
+      fileName: file.name,
+      type: getFileType(file.name),
+      uploadDate: new Date().toISOString(),
+      size: file.size
+    }
+    
+    files.value.unshift(newFile)
+  } catch (err) {
+    console.error('Failed to upload file:', err)
+  } finally {
+    uploadingFile.value = false
+  }
+}
+
+// Get file type from extension
+const getFileType = (fileName) => {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  if (['mp3', 'wav', 'ogg', 'm4a', 'aac'].includes(ext)) return 'Audio'
+  if (['mp4', 'avi', 'mov', 'wmv'].includes(ext)) return 'Video'
+  if (['pdf'].includes(ext)) return 'PDF'
+  if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'Image'
+  return 'Document'
+}
+
+// Format date
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+// View file
+const handleViewFile = async (file) => {
+  try {
+    const url = await fetchFileUrl(file.key)
+    if (url) {
+      window.open(url, '_blank')
+    }
+  } catch (err) {
+    console.error('Failed to view file:', err)
+  }
+}
+
+// Delete file
+const handleDeleteFile = async (file) => {
+  if (!confirm(`Are you sure you want to delete "${file.fileName}"?`)) {
+    return
+  }
+
+  try {
+    await deleteFile(file.key)
+    files.value = files.value.filter(f => f.key !== file.key)
+    // Remove feedback if exists
+    if (fileFeedbacks.value[file.key]) {
+      delete fileFeedbacks.value[file.key]
+    }
+  } catch (err) {
+    console.error('Failed to delete file:', err)
+  }
+}
+
+// Get feedback for a file
+const handleGetFeedback = async (file) => {
+  feedbackLoading.value[file.key] = true
+  try {
+    const feedback = await getFeedback(file.key)
+    fileFeedbacks.value[file.key] = feedback
+  } catch (err) {
+    console.error('Failed to get feedback:', err)
+  } finally {
+    feedbackLoading.value[file.key] = false
+  }
+}
+
+// Watch for tab changes to load files
+watch(activeTab, (newTab) => {
+  if (newTab === 'uploads') {
+    loadFiles()
   }
 })
 
@@ -92,11 +231,11 @@ const handleLogout = async () => {
         <a class="nav-link" :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">
           <i class="bi bi-house-door"></i>Overview
         </a>
-        <a class="nav-link" :class="{ active: activeTab === 'profile' }" @click="activeTab = 'profile'">
-          <i class="bi bi-person-circle"></i>Profile
+        <a class="nav-link" :class="{ active: activeTab === 'ai-coach' }" @click="activeTab = 'ai-coach'">
+          <i class="bi bi-robot"></i>AI Coach
         </a>
-        <a class="nav-link" :class="{ active: activeTab === 'courses' }" @click="activeTab = 'courses'">
-          <i class="bi bi-music-note-beamed"></i>My Programmes
+        <a class="nav-link" :class="{ active: activeTab === 'ai-feedbacks' }" @click="activeTab = 'ai-feedbacks'">
+          <i class="bi bi-chat-left-quote"></i>AI Feedbacks
         </a>
         <a class="nav-link" :class="{ active: activeTab === 'goals' }" @click="activeTab = 'goals'">
           <i class="bi bi-bullseye"></i>Goals
@@ -107,17 +246,8 @@ const handleLogout = async () => {
         <a class="nav-link" :class="{ active: activeTab === 'uploads' }" @click="activeTab = 'uploads'">
           <i class="bi bi-cloud-upload"></i>Uploads
         </a>
-        <a class="nav-link" :class="{ active: activeTab === 'personal-journal' }" @click="activeTab = 'personal-journal'">
-          <i class="bi bi-journal-text"></i>Personal Journal
-        </a>
-        <a class="nav-link" :class="{ active: activeTab === 'professional-journal' }" @click="activeTab = 'professional-journal'">
-          <i class="bi bi-journal-bookmark"></i>Professional Journal
-        </a>
-        <a class="nav-link" :class="{ active: activeTab === 'feedbacks' }" @click="activeTab = 'feedbacks'">
-          <i class="bi bi-chat-left-quote"></i>Feedbacks
-        </a>
-        <a class="nav-link" :class="{ active: activeTab === 'ai-coach' }" @click="activeTab = 'ai-coach'">
-          <i class="bi bi-robot"></i>AI Coach
+        <a class="nav-link" :class="{ active: activeTab === 'journal' }" @click="activeTab = 'journal'">
+          <i class="bi bi-journal-text"></i>Journal
         </a>
       </div>
     </div>
@@ -264,90 +394,28 @@ const handleLogout = async () => {
               </div>
             </div>
 
-            <!-- Profile Tab -->
-            <div v-show="activeTab === 'profile'" class="tab-pane fade" :class="{ 'show active': activeTab === 'profile' }">
-              <h4>My Profile</h4>
-              <div class="row">
-                <div class="col-md-8">
-                  <div class="card mb-3">
-                    <div class="card-header bg-primary-custom text-white">
-                      <h5 class="mb-0">Personal Information</h5>
-                    </div>
-                    <div class="card-body">
-                      <div class="row mb-3">
-                        <div class="col-md-6">
-                          <label class="form-label text-muted">First Name</label>
-                          <p class="fw-bold">Aoife</p>
-                        </div>
-                        <div class="col-md-6">
-                          <label class="form-label text-muted">Last Name</label>
-                          <p class="fw-bold">Byrne</p>
-                        </div>
-                      </div>
-                      <div class="row mb-3">
-                        <div class="col-md-6">
-                          <label class="form-label text-muted">Student ID</label>
-                          <p class="fw-bold">S01</p>
-                        </div>
-                        <div class="col-md-6">
-                          <label class="form-label text-muted">Email</label>
-                          <p class="fw-bold">{{ authStore.userEmail || 'aoife.byrne@riam.student.ie' }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="card mb-3">
-                    <div class="card-header bg-primary-custom text-white">
-                      <h5 class="mb-0">Performance Scores</h5>
-                    </div>
-                    <div class="card-body">
-                      <div class="mb-3">
-                        <label class="form-label text-muted">Technical Skills & Competence</label>
-                        <div class="progress" style="height: 25px;">
-                          <div class="progress-bar bg-primary-custom" role="progressbar" style="width: 58%">58</div>
-                        </div>
-                      </div>
-                      <div class="mb-3">
-                        <label class="form-label text-muted">Compositional & Musicianship</label>
-                        <div class="progress" style="height: 25px;">
-                          <div class="progress-bar bg-info" role="progressbar" style="width: 55%">55</div>
-                        </div>
-                      </div>
-                      <div class="mb-3">
-                        <label class="form-label text-muted">Repertoire & Cultural Knowledge</label>
-                        <div class="progress" style="height: 25px;">
-                          <div class="progress-bar bg-success" role="progressbar" style="width: 60%">60</div>
-                        </div>
-                      </div>
-                      <div class="mb-3">
-                        <label class="form-label text-muted">Performing Artistry</label>
-                        <div class="progress" style="height: 25px;">
-                          <div class="progress-bar bg-warning" role="progressbar" style="width: 62%">62</div>
-                        </div>
-                      </div>
-                      <hr>
-                      <div>
-                        <label class="form-label text-muted">Overall Average</label>
-                        <h3 class="text-primary-custom">59%</h3>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <!-- AI Coach Tab -->
+            <div v-show="activeTab === 'ai-coach'" class="tab-pane fade" :class="{ 'show active': activeTab === 'ai-coach' }">
+              <h4>AI Coach</h4>
+              <p class="text-muted">Chat with your AI assistant for personalized learning support.</p>
+              <AgentView />
             </div>
 
-            <!-- My Programmes Tab -->
-            <div v-show="activeTab === 'courses'" class="tab-pane fade" :class="{ 'show active': activeTab === 'courses' }">
-              <h4>My Programmes</h4>
-              <div class="list-group">
-                <a href="#" class="list-group-item list-group-item-action">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">Junior RIAM (Years 1–2)</h5>
-                    <small>Ms. Niamh O'Donnell</small>
+            <!-- AI Feedbacks Tab -->
+            <div v-show="activeTab === 'ai-feedbacks'" class="tab-pane fade" :class="{ 'show active': activeTab === 'ai-feedbacks' }">
+              <h4>AI Feedbacks</h4>
+              <div class="card mb-3">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <h5 class="card-title">Junior RIAM (Years 1–2) - Twinkle Variations Practice</h5>
+                      <p class="mb-1"><strong>Grade:</strong> <span class="badge bg-warning">C+</span></p>
+                    </div>
+                    <small class="text-muted">Jan 11, 2026</small>
                   </div>
-                </a>
+                  <p class="card-text mt-2">Good effort on Twinkle Variations! Remember to balance the violin on your shoulder and relax your right-hand thumb.</p>
+                  <p class="mb-0"><small><strong>Instructor:</strong> Ms. Niamh O'Donnell</small></p>
+                </div>
               </div>
             </div>
 
@@ -404,26 +472,94 @@ const handleLogout = async () => {
             <div v-show="activeTab === 'uploads'" class="tab-pane fade" :class="{ 'show active': activeTab === 'uploads' }">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4>My Uploads</h4>
-                <button class="btn btn-primary-custom btn-sm">Upload New File</button>
+                <div>
+                  <input
+                    ref="fileInputRef"
+                    type="file"
+                    class="d-none"
+                    @change="handleFileChange"
+                    :disabled="uploadingFile"
+                  />
+                  <button 
+                    class="btn btn-primary-custom btn-sm"
+                    @click="handleFileSelect"
+                    :disabled="uploadingFile"
+                  >
+                    <span v-if="uploadingFile" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    {{ uploadingFile ? 'Uploading...' : 'Upload New File' }}
+                  </button>
+                </div>
               </div>
-              <div class="table-responsive">
+              
+              <div v-if="loadingFiles" class="text-center py-4">
+                <div class="spinner-border" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+              
+              <div v-else class="table-responsive">
                 <table class="table table-striped">
                   <thead>
                     <tr>
                       <th>File Name</th>
                       <th>Type</th>
                       <th>Upload Date</th>
+                      <th>Feedback</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td><i class="bi bi-file-music"></i> claps-4beat-rhythms.mp3</td>
-                      <td>Audio</td>
-                      <td>Jan 10, 2026</td>
+                    <tr v-if="files.length === 0">
+                      <td colspan="5" class="text-center text-muted py-4">
+                        No files uploaded yet. Click "Upload New File" to get started.
+                      </td>
+                    </tr>
+                    <tr v-for="file in files" :key="file.key">
                       <td>
-                        <button class="btn btn-sm btn-info">View</button>
-                        <button class="btn btn-sm btn-danger">Delete</button>
+                        <i class="bi" :class="{
+                          'bi-file-music': file.type === 'Audio',
+                          'bi-file-play': file.type === 'Video',
+                          'bi-file-pdf': file.type === 'PDF',
+                          'bi-file-image': file.type === 'Image',
+                          'bi-file-earmark': file.type === 'Document'
+                        }"></i>
+                        {{ file.fileName }}
+                      </td>
+                      <td>{{ file.type }}</td>
+                      <td>{{ formatDate(file.uploadDate) }}</td>
+                      <td>
+                        <div v-if="fileFeedbacks[file.key]" class="feedback-content">
+                          <div class="card bg-light">
+                            <div class="card-body p-2">
+                              <small>
+                                <strong>Feedback:</strong> {{ typeof fileFeedbacks[file.key] === 'string' ? fileFeedbacks[file.key] : JSON.stringify(fileFeedbacks[file.key]) }}
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                        <button 
+                          v-else
+                          class="btn btn-sm btn-outline-primary"
+                          @click="handleGetFeedback(file)"
+                          :disabled="feedbackLoading[file.key]"
+                        >
+                          <span v-if="feedbackLoading[file.key]" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                          Get Feedback
+                        </button>
+                      </td>
+                      <td>
+                        <button 
+                          class="btn btn-sm btn-info me-1"
+                          @click="handleViewFile(file)"
+                        >
+                          View
+                        </button>
+                        <button 
+                          class="btn btn-sm btn-danger"
+                          @click="handleDeleteFile(file)"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   </tbody>
@@ -431,10 +567,10 @@ const handleLogout = async () => {
               </div>
             </div>
 
-            <!-- Personal Journal Tab -->
-            <div v-show="activeTab === 'personal-journal'" class="tab-pane fade" :class="{ 'show active': activeTab === 'personal-journal' }">
+            <!-- Journal Tab -->
+            <div v-show="activeTab === 'journal'" class="tab-pane fade" :class="{ 'show active': activeTab === 'journal' }">
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4>Personal Journal</h4>
+                <h4>Journal</h4>
                 <button class="btn btn-primary-custom btn-sm">New Entry</button>
               </div>
               <div class="card mb-3">
@@ -444,14 +580,6 @@ const handleLogout = async () => {
                   <small class="text-muted">Last edited: 2 hours ago</small>
                 </div>
               </div>
-            </div>
-
-            <!-- Professional Journal Tab -->
-            <div v-show="activeTab === 'professional-journal'" class="tab-pane fade" :class="{ 'show active': activeTab === 'professional-journal' }">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4>Professional Journal</h4>
-                <button class="btn btn-primary-custom btn-sm">New Entry</button>
-              </div>
               <div class="card mb-3">
                 <div class="card-body">
                   <h5 class="card-title">Class Performance - December 15, 2024</h5>
@@ -459,31 +587,6 @@ const handleLogout = async () => {
                   <small class="text-muted">December 15, 2024</small>
                 </div>
               </div>
-            </div>
-
-            <!-- Feedbacks Tab -->
-            <div v-show="activeTab === 'feedbacks'" class="tab-pane fade" :class="{ 'show active': activeTab === 'feedbacks' }">
-              <h4>Instructor Feedbacks</h4>
-              <div class="card mb-3">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                      <h5 class="card-title">Junior RIAM (Years 1–2) - Twinkle Variations Practice</h5>
-                      <p class="mb-1"><strong>Grade:</strong> <span class="badge bg-warning">C+</span></p>
-                    </div>
-                    <small class="text-muted">Jan 11, 2026</small>
-                  </div>
-                  <p class="card-text mt-2">Good effort on Twinkle Variations! Remember to balance the violin on your shoulder and relax your right-hand thumb.</p>
-                  <p class="mb-0"><small><strong>Instructor:</strong> Ms. Niamh O'Donnell</small></p>
-                </div>
-              </div>
-            </div>
-
-            <!-- AI Coach Tab -->
-            <div v-show="activeTab === 'ai-coach'" class="tab-pane fade" :class="{ 'show active': activeTab === 'ai-coach' }">
-              <h4>AI Coach</h4>
-              <p class="text-muted">Chat with your AI assistant for personalized learning support.</p>
-              <AgentView />
             </div>
           </div>
         </div>
