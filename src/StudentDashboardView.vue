@@ -6,6 +6,10 @@ import { usePreferencesStore } from '@/stores/preferences'
 import { useImages } from '@/composables/useImages'
 import { useFiles } from '@/composables/useFiles'
 import AgentView from '@/AgentView.vue'
+import { Chart, registerables } from 'chart.js'
+
+// Register Chart.js components
+Chart.register(...registerables)
 
 const authStore = useAuthStore()
 const preferencesStore = usePreferencesStore()
@@ -46,10 +50,15 @@ onMounted(async () => {
   } else if (authStore.userPicture) {
     profilePictureUrl.value = authStore.userPicture
   }
-  
+
   // Load files when uploads tab might be accessed
   if (activeTab.value === 'uploads') {
     await loadFiles()
+  }
+
+  // Initialize chart if on overview tab
+  if (activeTab.value === 'overview') {
+    setTimeout(() => initChart(), 100)
   }
 })
 
@@ -170,10 +179,100 @@ const handleGetFeedback = async (file) => {
   }
 }
 
-// Watch for tab changes to load files
+// Chart instance
+let chartInstance = null
+
+// Initialize the quadrant chart
+const initChart = () => {
+  const canvas = document.getElementById('practiceTimeChart')
+  if (!canvas) return
+
+  // Destroy existing chart if it exists
+  if (chartInstance) {
+    chartInstance.destroy()
+  }
+
+  const ctx = canvas.getContext('2d')
+  chartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: [
+        'Technical Skills',
+        'Compositional & Musicianship',
+        'Repertoire & Cultural',
+        'Performing Artistry'
+      ],
+      datasets: [{
+        data: [58, 55, 60, 62],
+        backgroundColor: [
+          '#3498db',  // Blue - Technical Skills
+          '#2ecc71',  // Green - Compositional & Musicianship
+          '#e67e22',  // Orange - Repertoire & Cultural
+          '#9b59b6'   // Purple - Performing Artistry
+        ],
+        borderColor: '#ffffff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom'
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const label = context.label || ''
+              const value = context.parsed || 0
+              return `${label}: ${value}`
+            }
+          }
+        }
+      }
+    },
+    plugins: [{
+      id: 'doughnutLabel',
+      afterDatasetDraw: function(chart) {
+        const ctx = chart.ctx
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
+          const meta = chart.getDatasetMeta(datasetIndex)
+          meta.data.forEach((element, index) => {
+            const data = dataset.data[index]
+            const midAngle = (element.startAngle + element.endAngle) / 2
+            const midRadius = (element.innerRadius + element.outerRadius) / 2
+
+            const x = element.x + Math.cos(midAngle) * midRadius
+            const y = element.y + Math.sin(midAngle) * midRadius
+
+            ctx.fillStyle = '#fff'
+            ctx.font = 'bold 16px sans-serif'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(data, x, y)
+          })
+        })
+      }
+    }]
+  })
+}
+
+// Watch for tab changes to load files or initialize chart
 watch(activeTab, (newTab) => {
   if (newTab === 'uploads') {
     loadFiles()
+  } else if (newTab === 'overview') {
+    // Initialize chart when overview tab is shown
+    setTimeout(() => initChart(), 100)
+  }
+})
+
+// Cleanup on unmount
+onBeforeUnmount(() => {
+  if (chartInstance) {
+    chartInstance.destroy()
   }
 })
 
@@ -259,30 +358,6 @@ const handleLogout = async () => {
           <div class="col-12">
             <h2>Student Dashboard</h2>
             <p class="page-description">Welcome back!</p>
-
-            <!-- Student Info -->
-            <div class="card mb-3">
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-4">
-                    <p class="mb-1"><strong>Name:</strong> {{ studentInfo.name }}</p>
-                  </div>
-                  <div class="col-md-4">
-                    <p class="mb-1"><strong>Age:</strong> {{ studentInfo.age }}</p>
-                  </div>
-                  <div class="col-md-4">
-                    <p class="mb-1"><strong>Stage:</strong> {{ studentInfo.stage }}</p>
-                  </div>
-                  <div class="col-md-4">
-                    <p class="mb-1"><strong>Student ID:</strong> {{ studentInfo.studentId }}</p>
-                  </div>
-                  <div class="col-md-4">
-                    <p class="mb-1"><strong>Instruments:</strong> {{ studentInfo.instruments }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <hr />
           </div>
         </div>
 
@@ -291,10 +366,65 @@ const handleLogout = async () => {
           <div class="col-12">
             <!-- Overview Tab -->
             <div v-show="activeTab === 'overview'" class="tab-pane fade" :class="{ 'show active': activeTab === 'overview' }">
+              <!-- Student Info & Quadrant Scores -->
+              <div class="row mb-3">
+                <!-- Student Info -->
+                <div class="col-md-6 mb-3">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <h5 class="card-title mb-3">Student Information</h5>
+                      <div class="row">
+                        <div class="col-6">
+                          <p class="mb-1"><strong>Name:</strong> {{ studentInfo.name }}</p>
+                        </div>
+                        <div class="col-6">
+                          <p class="mb-1"><strong>Age:</strong> {{ studentInfo.age }}</p>
+                        </div>
+                        <div class="col-6">
+                          <p class="mb-1"><strong>Stage:</strong> {{ studentInfo.stage }}</p>
+                        </div>
+                        <div class="col-6">
+                          <p class="mb-1"><strong>Student ID:</strong> {{ studentInfo.studentId }}</p>
+                        </div>
+                        <div class="col-12">
+                          <p class="mb-1"><strong>Instruments:</strong> {{ studentInfo.instruments }}</p>
+                        </div>
+                        <div class="col-12">
+                          <p class="mb-0"><strong>Programme:</strong> {{ studentInfo.programme }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- RIAM Quadrant Scores -->
+                <div class="col-md-6 mb-3">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <h5 class="card-title mb-3">Quadrant Scores</h5>
+                      <div class="row align-items-center">
+                        <div class="col-6">
+                          <p class="mb-2 small">The following are the Accordo AI Quadrant scores.</p>
+                          <ul class="list-unstyled mb-0 small">
+                            <li><strong>Technical Skills:</strong> <span id="q-tech">58</span></li>
+                            <li><strong>Compositional & Musicianship:</strong> <span id="q-comp">55</span></li>
+                            <li><strong>Repertoire & Cultural:</strong> <span id="q-rep">60</span></li>
+                            <li><strong>Performing Artistry:</strong> <span id="q-perf">62</span></li>
+                          </ul>
+                        </div>
+                        <div class="col-6">
+                          <canvas id="practiceTimeChart"></canvas>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Quick Stats -->
               <div class="row mb-4">
                 <div class="col-md-3 mb-3">
-                  <div class="card">
+                  <div class="card h-100">
                     <div class="card-body">
                       <h5 class="card-title">Programme</h5>
                       <p class="mb-0"><strong>Junior RIAM</strong></p>
@@ -380,16 +510,39 @@ const handleLogout = async () => {
                 </div>
               </div>
 
-              <!-- Quadrant Scores -->
-              <div class="card mb-4">
-                <div class="card-body">
-                  <h5 class="card-title mb-3">Quadrant Scores</h5>
-                  <ul class="list-unstyled mb-2">
-                    <li><strong>Technical Skills & Competence:</strong> 58</li>
-                    <li><strong>Compositional & Musicianship Knowledge:</strong> 55</li>
-                    <li><strong>Repertoire & Cultural Knowledge:</strong> 60</li>
-                    <li><strong>Performing Artistry:</strong> 62</li>
-                  </ul>
+              <div class="container">
+                <h5 class="mb-3 text-center">Achievements & Badges</h5>
+                <div class="row justify-content-center">
+                  <div class="col-md-2 col-sm-4 col-6 text-center mb-3">
+                    <div class="badge-container">
+                      <i class="bi bi-award-fill text-primary-custom" style="font-size: 3rem;"></i>
+                      <p class="mb-0 mt-2"><small>Perfect Attendance</small></p>
+                    </div>
+                  </div>
+                  <div class="col-md-2 col-sm-4 col-6 text-center mb-3">
+                    <div class="badge-container">
+                      <i class="bi bi-trophy-fill text-warning" style="font-size: 3rem;"></i>
+                      <p class="mb-0 mt-2"><small>First Performance</small></p>
+                    </div>
+                  </div>
+                  <div class="col-md-2 col-sm-4 col-6 text-center mb-3">
+                    <div class="badge-container">
+                      <i class="bi bi-star-fill text-primary-custom" style="font-size: 3rem;"></i>
+                      <p class="mb-0 mt-2"><small>Theory Master</small></p>
+                    </div>
+                  </div>
+                  <div class="col-md-2 col-sm-4 col-6 text-center mb-3">
+                    <div class="badge-container">
+                      <i class="bi bi-music-note-beamed text-success" style="font-size: 3rem;"></i>
+                      <p class="mb-0 mt-2"><small>Practice Streak</small></p>
+                    </div>
+                  </div>
+                  <div class="col-md-2 col-sm-4 col-6 text-center mb-3">
+                    <div class="badge-container">
+                      <i class="bi bi-gem text-info" style="font-size: 3rem;"></i>
+                      <p class="mb-0 mt-2"><small>Excellence Award</small></p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
