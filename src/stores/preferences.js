@@ -107,16 +107,16 @@ export const usePreferencesStore = defineStore('preferences', {
         if (this.theme) {
           this.applyTheme(this.theme)
         } else {
-          // Default to light if no preference saved
-          this.theme = 'light'
-          this.applyTheme('light')
+          // Default to system if no preference saved
+          this.theme = 'system'
+          this.applyTheme('system')
         }
       } catch (err) {
         this.error = err.message
         console.error('Failed to load preferences:', err)
-        // Default to light on error
-        this.theme = 'light'
-        this.applyTheme('light')
+        // Default to system on error
+        this.theme = 'system'
+        this.applyTheme('system')
       } finally {
         this.loading = false
       }
@@ -197,13 +197,8 @@ export const usePreferencesStore = defineStore('preferences', {
           )
         }
 
-<<<<<<< HEAD
-        // Get current preferences to preserve theme and displayPicture
-        const currentTheme = this.theme || 'light'
-=======
         // Get current preferences to preserve theme, displayPicture, and studentId
         const currentTheme = this.theme || 'system'
->>>>>>> origin/UI
         const currentDisplayPicture = this.displayPicture || null
         const currentStudentId = this.studentId || null
         const url = `${awsConfig.apiGatewayUrl}/user/preferences`
@@ -256,13 +251,8 @@ export const usePreferencesStore = defineStore('preferences', {
           )
         }
 
-<<<<<<< HEAD
-        // Get current preferences to preserve theme and displayName
-        const currentTheme = this.theme || 'light'
-=======
         // Get current preferences to preserve theme, displayName, and studentId
         const currentTheme = this.theme || 'system'
->>>>>>> origin/UI
         const currentDisplayName = this.displayName || null
         const currentStudentId = this.studentId || null
         const url = `${awsConfig.apiGatewayUrl}/user/preferences`

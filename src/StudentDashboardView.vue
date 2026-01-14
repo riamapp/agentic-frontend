@@ -413,7 +413,7 @@ const handleLogout = async () => {
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom navbar-tall">
       <div class="container-fluid">
         <RouterLink to="/" class="navbar-brand d-flex align-items-center">
-          <img src="/Riam Logo.png" alt="RIAM Logo" style="height: 55px; margin-right: 12px;" />
+          <img src="/Riam%20Logo.png" alt="RIAM Logo" style="height: 55px; margin-right: 12px;" />
           <span class="navbar-brand-text">Accordo AI</span>
         </RouterLink>
         <button class="navbar-toggler" type="button" @click="toggleSidebar">
