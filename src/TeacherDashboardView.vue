@@ -606,6 +606,7 @@ const handleSubmitGoal = () => {
                       <select class="form-select" id="goalClass" v-model="goalForm.programme">
                         <option value="">Select Programme/Student</option>
                         <option>Junior RIAM (Years 1–2) - All Students</option>
+<<<<<<< HEAD
                         <option>Junior RIAM (Years 3-4) - All Students</option>
                         <option>Junior RIAM (Years 5-6) - All Students</option>
                         <option>Young Artist Programme - All Students</option>
@@ -614,6 +615,9 @@ const handleSubmitGoal = () => {
                         <option>Individual: Ella Murphy (S03)</option>
                         <option>Individual: Rory Fitzpatrick (S04)</option>
                         <option>Individual: Saoirse Nolan (S05)</option>
+=======
+                        <option>Individual: Aoife Byrne (1)</option>
+>>>>>>> origin/UI
                       </select>
                     </div>
                     <div class="mb-3">
@@ -742,6 +746,7 @@ const handleSubmitGoal = () => {
                   <h5 class="mb-0">Student Uploads</h5>
                 </div>
                 <div class="card-body">
+<<<<<<< HEAD
                   <div class="table-responsive">
                     <table class="table table-hover">
                       <thead>
@@ -816,6 +821,43 @@ const handleSubmitGoal = () => {
                     <button type="button" class="btn btn-secondary" @click="showFeedbackModal = false">Cancel</button>
                     <button type="button" class="btn btn-primary-custom">Submit Feedback</button>
                   </div>
+=======
+                  <h5 class="card-title">Submit Feedback</h5>
+                  <form>
+                    <div class="mb-3">
+                      <label for="feedbackClass" class="form-label">Select Programme</label>
+                      <select class="form-select" id="feedbackClass">
+                        <option>Junior RIAM (Years 1-2)</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label for="feedbackStudent" class="form-label">Select Student</label>
+                      <select class="form-select" id="feedbackStudent">
+                        <option>Aoife Byrne (1)</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label for="feedbackAssignment" class="form-label">Assignment/Assessment</label>
+                      <input type="text" class="form-control" id="feedbackAssignment" placeholder="e.g., Quiz 3, Practice Performance">
+                    </div>
+                    <div class="mb-3">
+                      <label for="feedbackGrade" class="form-label">Grade</label>
+                      <select class="form-select" id="feedbackGrade">
+                        <option>A+</option>
+                        <option>A</option>
+                        <option>B+</option>
+                        <option>C+</option>
+                        <option>D</option>
+                        <option>F</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label for="feedbackComments" class="form-label">Feedback Comments</label>
+                      <textarea class="form-control" id="feedbackComments" rows="4" placeholder="Provide detailed feedback..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom">Submit Feedback</button>
+                  </form>
+>>>>>>> origin/UI
                 </div>
               </div>
             </div>

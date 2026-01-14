@@ -35,7 +35,7 @@ const studentInfo = ref({
   name: 'Aoife Byrne',
   age: 10,
   stage: 'Development',
-  studentId: 'S01',
+  studentId: '1', // Default fallback
   instruments: 'Violin – Strings',
   programme: 'Junior RIAM (Years 1-2)',
   goals: [
@@ -87,6 +87,21 @@ const toggleSidebar = () => {
 
 // Load profile picture and files
 onMounted(async () => {
+  // Ensure preferences are loaded
+  if (!preferencesStore.studentId) {
+    // If studentId is not in preferences, set it to the default
+    // This should ideally come from an API call, but for now use the hardcoded value
+    try {
+      await preferencesStore.updateStudentId(studentInfo.value.studentId)
+    } catch (err) {
+      console.error('Failed to save student ID to preferences:', err)
+      // Continue anyway - we'll use the local value
+    }
+  } else {
+    // Use studentId from preferences
+    studentInfo.value.studentId = preferencesStore.studentId
+  }
+
   if (preferencesStore.displayPicture) {
     const url = await fetchImageUrl(preferencesStore.displayPicture)
     profilePictureUrl.value = url
@@ -166,7 +181,24 @@ const handleFileChange = async (event) => {
 const uploadFileToS3 = async (file) => {
   uploadingFile.value = true
   try {
-    const fileKey = await uploadFile(file, studentInfo.value.studentId)
+    // Get studentId from preferences or use the default
+    const currentStudentId = preferencesStore.studentId || studentInfo.value.studentId
+    if (!currentStudentId) {
+      throw new Error('Student ID is required for file upload')
+    }
+
+    // Save to preferences if not already set
+    if (!preferencesStore.studentId && currentStudentId) {
+      try {
+        await preferencesStore.updateStudentId(currentStudentId)
+      } catch (err) {
+        console.warn('Failed to save student ID to preferences:', err)
+        // Continue anyway - we'll send it in the payload
+      }
+    }
+
+    // Upload file with student_id in the payload
+    const fileKey = await uploadFile(file, currentStudentId)
     
     // Add file to list
     const newFile = {
