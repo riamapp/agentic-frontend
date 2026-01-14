@@ -37,15 +37,17 @@ export function useFiles() {
   }
 
   // Upload file to S3 via presigned URL, returns the key
-  const uploadFile = async (file) => {
+  const uploadFile = async (file, studentId) => {
     if (!file) throw new Error('No file provided')
+    if (!studentId) throw new Error('Student ID is required')
 
     // Create FormData for file upload
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('student_id', studentId)
 
     // Upload file directly to backend endpoint
-    const uploadResponse = await authenticatedFetch('/upload', {
+    const uploadResponse = await authenticatedFetch('/feedback/upload-url', {
       method: 'POST',
       headers: {
         // Don't set Content-Type - let browser set it with boundary for FormData
@@ -108,8 +110,9 @@ export function useFiles() {
   }
 
   // Get feedback for a file from S3
-  const getFeedback = async (fileKey) => {
+  const getFeedback = async (fileKey, studentId) => {
     if (!fileKey) throw new Error('No file key provided')
+    if (!studentId) throw new Error('Student ID is required')
 
     try {
       const response = await authenticatedFetch(`/student/getFeedback`, {
@@ -119,6 +122,7 @@ export function useFiles() {
         },
         body: JSON.stringify({
           fileKey: fileKey,
+          student_id: studentId,
         }),
       })
       
@@ -138,9 +142,19 @@ export function useFiles() {
   }
 
   // List user's uploaded files
-  const listFiles = async () => {
+  const listFiles = async (studentId) => {
+    if (!studentId) throw new Error('Student ID is required')
+
     try {
-      const response = await authenticatedFetch('/files')
+      const response = await authenticatedFetch('/files', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          student_id: studentId,
+        }),
+      })
       
       if (!response.ok) {
         throw new Error(`Failed to list files: ${response.status} ${response.statusText}`)

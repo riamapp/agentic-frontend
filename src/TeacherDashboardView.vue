@@ -4,7 +4,6 @@ import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useImages } from '@/composables/useImages'
-import AgentView from '@/AgentView.vue'
 
 const authStore = useAuthStore()
 const preferencesStore = usePreferencesStore()
@@ -97,9 +96,6 @@ const handleLogout = async () => {
         </a>
         <a class="nav-link" :class="{ active: activeTab === 'ai-insights' }" @click="activeTab = 'ai-insights'">
           <i class="bi bi-lightbulb"></i>AI Insights
-        </a>
-        <a class="nav-link" :class="{ active: activeTab === 'ai-coach' }" @click="activeTab = 'ai-coach'">
-          <i class="bi bi-robot"></i>AI Coach
         </a>
       </div>
     </div>
@@ -339,13 +335,6 @@ const handleLogout = async () => {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <!-- AI Coach Tab -->
-            <div v-show="activeTab === 'ai-coach'" class="tab-pane fade" :class="{ 'show active': activeTab === 'ai-coach' }">
-              <h4>AI Coach</h4>
-              <p class="text-muted">Chat with your AI assistant for teaching support and insights.</p>
-              <AgentView />
             </div>
           </div>
         </div>

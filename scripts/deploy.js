@@ -158,7 +158,7 @@ function uploadToS3(buildPath) {
     // Sync HTML files with no-cache
     execSync(
       buildAWSCommand(
-        `aws s3 sync ${buildPath} s3://${deployConfig.bucketName} --region ${deployConfig.region} --delete --exclude "*" --include "*.html" --cache-control "${deployConfig.cacheControl.html}" --content-type "text/html"`,
+        `aws s3 sync "${buildPath}" s3://${deployConfig.bucketName} --region ${deployConfig.region} --delete --exclude "*" --include "*.html" --cache-control "${deployConfig.cacheControl.html}" --content-type "text/html"`,
       ),
       { stdio: 'inherit', cwd: projectRoot },
     )
@@ -166,7 +166,7 @@ function uploadToS3(buildPath) {
     // Sync assets with long cache
     execSync(
       buildAWSCommand(
-        `aws s3 sync ${buildPath} s3://${deployConfig.bucketName} --region ${deployConfig.region} --exclude "*.html" --cache-control "${deployConfig.cacheControl.assets}"`,
+        `aws s3 sync "${buildPath}" s3://${deployConfig.bucketName} --region ${deployConfig.region} --exclude "*.html" --cache-control "${deployConfig.cacheControl.assets}"`,
       ),
       { stdio: 'inherit', cwd: projectRoot },
     )

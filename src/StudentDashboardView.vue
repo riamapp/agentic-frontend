@@ -57,7 +57,7 @@ onMounted(async () => {
 const loadFiles = async () => {
   loadingFiles.value = true
   try {
-    const fileList = await listFiles()
+    const fileList = await listFiles(studentInfo.value.studentId)
     files.value = fileList.map(file => ({
       ...file,
       uploadDate: file.uploadDate || file.createdAt || new Date().toISOString()
@@ -91,7 +91,7 @@ const handleFileChange = async (event) => {
 const uploadFileToS3 = async (file) => {
   uploadingFile.value = true
   try {
-    const fileKey = await uploadFile(file)
+    const fileKey = await uploadFile(file, studentInfo.value.studentId)
     
     // Add file to list
     const newFile = {
@@ -161,7 +161,7 @@ const handleDeleteFile = async (file) => {
 const handleGetFeedback = async (file) => {
   feedbackLoading.value[file.key] = true
   try {
-    const feedback = await getFeedback(file.key)
+    const feedback = await getFeedback(file.key, studentInfo.value.studentId)
     fileFeedbacks.value[file.key] = feedback
   } catch (err) {
     console.error('Failed to get feedback:', err)
