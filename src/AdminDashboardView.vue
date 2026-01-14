@@ -372,6 +372,7 @@ const handleLogout = async () => {
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom navbar-tall">
       <div class="container-fluid">
         <RouterLink to="/" class="navbar-brand d-flex align-items-center">
+          <img src="/RIAM_Logo_White.png" alt="RIAM Logo" style="height: 40px; margin-right: 12px;" />
           <span class="navbar-brand-text">Accordo AI</span>
         </RouterLink>
         <button class="navbar-toggler" type="button" @click="toggleSidebar">
@@ -588,6 +589,46 @@ const handleLogout = async () => {
             <div v-show="activeTab === 'ai-monitoring'" class="tab-pane fade" :class="{ 'show active': activeTab === 'ai-monitoring' }">
               <h4>AI Monitoring & Analytics</h4>
               <p class="page-description">Comprehensive monitoring of all AI interactions including student-AI and teacher-AI conversations.</p>
+              
+              <!-- Filter Options -->
+              <div class="card mb-4">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <label for="aiClassFilter" class="form-label">Filter by Programme</label>
+                      <select class="form-select" id="aiClassFilter">
+                        <option selected>All Programmes</option>
+                        <option>Junior RIAM (Years 1-2)</option>
+                        <option>Junior RIAM (Years 3-4)</option>
+                        <option>Junior RIAM (Years 5-6)</option>
+                        <option>Young Artist Programme</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="aiStudentFilter" class="form-label">Filter by Student</label>
+                      <select class="form-select" id="aiStudentFilter">
+                        <option selected>All Students</option>
+                        <option>Aoife Byrne (S01)</option>
+                        <option>Conor Walsh (S02)</option>
+                        <option>Ella Murphy (S03)</option>
+                        <option>Rory Fitzpatrick (S04)</option>
+                        <option>Saoirse Nolan (S05)</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="aiDateFilter" class="form-label">Date Range</label>
+                      <select class="form-select" id="aiDateFilter">
+                        <option selected>Last 7 Days</option>
+                        <option>Last 30 Days</option>
+                        <option>Last 3 Months</option>
+                        <option>All Time</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Statistics Cards -->
               <div class="row mb-4">
                 <div class="col-md-3 mb-3">
                   <div class="card">
@@ -622,6 +663,200 @@ const handleLogout = async () => {
                       <h6 class="card-title">Avg Response Time</h6>
                       <h3 class="text-warning">1.1s</h3>
                       <small class="text-muted">System performance</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Discussion Summaries -->
+              <div class="mb-4">
+                <h5 class="mb-3">
+                  <i class="bi bi-chat-dots text-primary-custom"></i> Recent AI Discussions Summary
+                </h5>
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 class="mb-1">Aoife Byrne - Junior RIAM (Years 1-2)</h6>
+                        <small class="text-muted"><i class="bi bi-calendar3"></i> Jan 12, 2026 | <i class="bi bi-clock"></i> 14:32</small>
+                      </div>
+                      <span class="badge bg-info">8 Messages</span>
+                    </div>
+                    <div class="mt-3">
+                      <h6 class="text-primary-custom">Discussion Topics:</h6>
+                      <ul class="mb-2">
+                        <li>Bow hold and relaxing right-hand thumb</li>
+                        <li>Balancing violin on shoulder</li>
+                        <li>Intonation tips for Twinkle Variations</li>
+                      </ul>
+                      <h6 class="text-primary-custom">AI Summary:</h6>
+                      <p class="mb-2">Student expressed: "Rhythms feel tricky — singing first helps." AI provided guidance on using singing as a learning tool and suggested slow practice with open strings. Student is making steady progress but needs continued reinforcement on posture and bow hold.</p>
+                      <h6 class="text-primary-custom">Recommended Action:</h6>
+                      <p class="mb-0"><span class="badge bg-primary-custom">Follow-up Needed</span> Review bow hold and shoulder position during next lesson. Continue slow, controlled practice.</p>
+                    </div>
+                    <div class="mt-3">
+                      <button class="btn btn-sm btn-primary-custom">View Full Conversation</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 class="mb-1">Conor Walsh - Junior RIAM (Years 3-4)</h6>
+                        <small class="text-muted"><i class="bi bi-calendar3"></i> Jan 11, 2026 | <i class="bi bi-clock"></i> 09:15</small>
+                      </div>
+                      <span class="badge bg-info">10 Messages</span>
+                    </div>
+                    <div class="mt-3">
+                      <h6 class="text-primary-custom">Discussion Topics:</h6>
+                      <ul class="mb-2">
+                        <li>Baroque style and articulation in Bach Minuet</li>
+                        <li>Breath support for long phrases</li>
+                        <li>Counting through rests accurately</li>
+                      </ul>
+                      <h6 class="text-primary-custom">AI Summary:</h6>
+                      <p class="mb-2">Student noted the 'dance' feel and lighter articulation in Baroque style. Teacher commented: "Great listener — needs confidence to improvise small answers." AI encouraged experimenting with dynamic variations and suggested performance reps for building stage confidence.</p>
+                      <h6 class="text-primary-custom">Recommended Action:</h6>
+                      <p class="mb-0"><span class="badge bg-success">No Action Needed</span> Student showing excellent understanding. Continue with performance preparation exercises.</p>
+                    </div>
+                    <div class="mt-3">
+                      <button class="btn btn-sm btn-primary-custom">View Full Conversation</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Upload Review & Analysis -->
+              <div class="mb-4">
+                <h5 class="mb-3">
+                  <i class="bi bi-file-earmark-music text-primary-custom"></i> AI Upload Review & Analysis
+                </h5>
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 class="mb-1">Aoife Byrne - Piano Practice Recording</h6>
+                        <small class="text-muted"><i class="bi bi-calendar3"></i> {{ new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) }} | <i class="bi bi-clock"></i> 16:45</small>
+                      </div>
+                      <span class="badge bg-success">Reviewed</span>
+                    </div>
+                    <div class="mt-3">
+                      <h6 class="text-primary-custom">Upload Type:</h6>
+                      <p class="mb-2"><i class="bi bi-file-music"></i> Audio Recording - "Piano file 3 mins.mp3" (3:00 duration)</p>
+
+                      <h6 class="text-primary-custom">AI Analysis Process:</h6>
+                      <div class="alert alert-light mb-2">
+                        <small>
+                          <strong>Step 1:</strong> Audio file transcribed and analyzed for tempo, rhythm accuracy, and note precision.<br>
+                          <strong>Step 2:</strong> Compared performance against reference recording and sheet music.<br>
+                          <strong>Step 3:</strong> Identified specific sections with timing inconsistencies.<br>
+                          <strong>Step 4:</strong> Generated detailed feedback with timestamps.
+                        </small>
+                      </div>
+
+                      <h6 class="text-primary-custom">AI Assessment:</h6>
+                      <ul class="mb-2">
+                        <li><strong>Overall Performance:</strong> Good (75/100)</li>
+                        <li><strong>Rhythm:</strong> Steady throughout with minor tempo fluctuations</li>
+                        <li><strong>Dynamics:</strong> Good control, shows understanding of dynamic markings</li>
+                        <li><strong>Technical Precision:</strong> Solid foundation, accurate note execution</li>
+                        <li><strong>Musical Expression:</strong> Could benefit from more expressive phrasing in middle section</li>
+                      </ul>
+
+                      <h6 class="text-primary-custom">AI's Detailed Thought Process:</h6>
+                      <p class="mb-2 fst-italic">"The student demonstrates good technical control with steady rhythm and accurate note execution. The dynamic control shows understanding of musical markings. However, the middle section could benefit from more expressive phrasing to emphasize the melodic line. The student is making solid progress and shows good practice habits."</p>
+
+                      <h6 class="text-primary-custom">AI Recommended Feedback for Student:</h6>
+                      <div class="alert alert-info mb-2">
+                        <small>
+                          "Great work on your piano practice! Your rhythm is steady and your dynamics show good control. Continue working on maintaining consistent tempo throughout the piece. The phrasing in the middle section could be more expressive - try to emphasize the melodic line. Overall, this is solid progress. Keep practicing!"
+                        </small>
+                      </div>
+                    </div>
+                    <div class="mt-3">
+                      <button class="btn btn-sm btn-outline-secondary">View Upload</button>
+                      <button class="btn btn-sm btn-outline-secondary ms-2">View AI Analysis</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Journal Entries & AI Feedback -->
+              <div class="mb-4">
+                <h5 class="mb-3">
+                  <i class="bi bi-journal-text text-primary-custom"></i> Journal Entries & AI Feedback
+                </h5>
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 class="mb-1">Aoife Byrne - Personal Journal Entry</h6>
+                        <small class="text-muted"><i class="bi bi-calendar3"></i> Jan 10, 2026 | <i class="bi bi-clock"></i> 15:30</small>
+                      </div>
+                      <span class="badge bg-info">Personal</span>
+                    </div>
+                    <div class="mt-3">
+                      <h6 class="text-primary-custom">Journal Entry:</h6>
+                      <div class="alert alert-light mb-2">
+                        <p class="mb-0">"Rhythms feel tricky — singing first helps. I'm getting better at keeping the beat steady when I sing the melody before playing it on the violin."</p>
+                      </div>
+                      <h6 class="text-primary-custom">AI Feedback:</h6>
+                      <div class="alert alert-info mb-2">
+                        <small>
+                          "That's an excellent learning strategy, Aoife! Singing before playing is a wonderful way to internalize the rhythm and melody. This approach helps your brain connect the musical idea with the physical movements needed to play. Keep using this technique - it's a sign of mature musical thinking. Consider also clapping the rhythm while singing to reinforce the timing even more."
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 class="mb-1">Aoife Byrne - Professional Journal Entry</h6>
+                        <small class="text-muted"><i class="bi bi-calendar3"></i> Dec 15, 2024 | <i class="bi bi-clock"></i> 10:00</small>
+                      </div>
+                      <span class="badge bg-warning text-dark">Professional</span>
+                    </div>
+                    <div class="mt-3">
+                      <h6 class="text-primary-custom">Journal Entry:</h6>
+                      <div class="alert alert-light mb-2">
+                        <p class="mb-0"><strong>Performance:</strong> Class performance</p>
+                        <p class="mb-0"><strong>Reflection:</strong> "I was nervous, but proud when I played for the class."</p>
+                      </div>
+                      <h6 class="text-primary-custom">AI Feedback:</h6>
+                      <div class="alert alert-info mb-2">
+                        <small>
+                          "It's completely normal to feel nervous before performing, Aoife! The fact that you felt proud afterward shows that you pushed through your nerves and did your best. This is a valuable experience - each performance helps build your confidence. Remember, even professional musicians feel nervous sometimes. The key is learning to channel that energy into your music. Great job on your class performance!"
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 class="mb-1">Conor Walsh - Personal Journal Entry</h6>
+                        <small class="text-muted"><i class="bi bi-calendar3"></i> Jan 8, 2026 | <i class="bi bi-clock"></i> 11:20</small>
+                      </div>
+                      <span class="badge bg-info">Personal</span>
+                    </div>
+                    <div class="mt-3">
+                      <h6 class="text-primary-custom">Journal Entry:</h6>
+                      <div class="alert alert-light mb-2">
+                        <p class="mb-0">"I like the dance feel in Baroque music. The teacher says I'm a great listener but need confidence to improvise small answers."</p>
+                      </div>
+                      <h6 class="text-primary-custom">AI Feedback:</h6>
+                      <div class="alert alert-info mb-2">
+                        <small>
+                          "Your observation about the 'dance feel' in Baroque music shows excellent musical awareness, Conor! Baroque music was indeed written for dancing, and that rhythmic energy is a key characteristic. Regarding improvisation - confidence comes with practice. Start small: try improvising just 2-3 note answers to musical phrases you know well. Your teacher's feedback suggests you have the listening skills - now it's about trusting your musical instincts. You've got this!"
+                        </small>
+                      </div>
                     </div>
                   </div>
                 </div>

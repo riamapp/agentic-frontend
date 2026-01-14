@@ -31,8 +31,9 @@ onMounted(() => {
     <!-- Navigation -->
     <nav class="modern-nav" id="navbar">
       <div class="nav-container">
-        <RouterLink to="/" class="nav-logo">
-          <div class="logo-text" style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <RouterLink to="/" class="nav-logo d-flex align-items-center">
+          <img src="/RIAM_Logo_White.png" alt="RIAM Logo" style="height: 45px; margin-right: 12px; filter: brightness(0);" />
+          <div class="logo-text" style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
             Accordo AI
           </div>
         </RouterLink>
@@ -237,30 +238,10 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-      <div class="section-container">
-        <h2 class="cta-title">Ready to Transform Your Music Education?</h2>
-        <p class="cta-description">
-          Join Accordo AI's innovative digital platform today
-        </p>
-        <div class="hero-buttons">
-          <RouterLink to="/signup" class="hero-btn-primary">
-            <i class="bi bi-rocket-takeoff"></i> Get Started Free
-          </RouterLink>
-          <RouterLink to="/login" class="hero-btn-secondary">
-            <i class="bi bi-box-arrow-in-right"></i> Sign In
-          </RouterLink>
-        </div>
-      </div>
-    </section>
 
     <!-- Footer -->
     <footer class="modern-footer">
       <div class="footer-content">
-        <div class="footer-logo">
-          <h2 style="font-size: 2rem; font-weight: 800; color: white;">Accordo AI</h2>
-        </div>
         <div class="footer-links">
           <a href="#features" class="footer-link">Features</a>
           <a href="#quadrants" class="footer-link">Quadrant Model</a>
@@ -287,7 +268,7 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   z-index: -1;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
 }
 
 /* Navigation */
@@ -348,7 +329,7 @@ onMounted(() => {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
   transition: width 0.3s ease;
 }
 
@@ -357,19 +338,19 @@ onMounted(() => {
 }
 
 .nav-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 50px;
   text-decoration: none;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(105, 52, 126, 0.4);
 }
 
 .nav-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 6px 20px rgba(105, 52, 126, 0.6);
   color: white;
 }
 
@@ -380,7 +361,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
   overflow: hidden;
   padding: 6rem 2rem 4rem;
 }
@@ -423,7 +404,7 @@ onMounted(() => {
 
 .hero-btn-primary {
   background: white;
-  color: #667eea;
+  color: #69347e;
   padding: 1rem 2.5rem;
   border-radius: 50px;
   text-decoration: none;
@@ -436,7 +417,7 @@ onMounted(() => {
 .hero-btn-primary:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
-  color: #667eea;
+  color: #69347e;
 }
 
 .hero-btn-secondary {
@@ -454,7 +435,7 @@ onMounted(() => {
 
 .hero-btn-secondary:hover {
   background: white;
-  color: #667eea;
+  color: #69347e;
   transform: translateY(-3px);
 }
 
@@ -543,7 +524,7 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
@@ -561,7 +542,7 @@ onMounted(() => {
   width: 70px;
   height: 70px;
   border-radius: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -639,7 +620,7 @@ onMounted(() => {
 }
 
 .quadrant-card:nth-child(2)::before {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
 }
 
 .quadrant-card:nth-child(3)::before {
@@ -659,7 +640,7 @@ onMounted(() => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -671,7 +652,7 @@ onMounted(() => {
 /* CTA Section */
 .cta-section {
   padding: 6rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #69347e 0%, #8b5a9e 100%);
   text-align: center;
   color: white;
 }

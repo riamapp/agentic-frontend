@@ -52,7 +52,8 @@ const handleSignup = async (e) => {
           <div class="card signup-card">
             <div class="card-body p-5">
               <div class="text-center mb-4">
-                <RouterLink to="/" class="auth-logo-link">
+                <RouterLink to="/" class="auth-logo-link d-flex flex-column align-items-center">
+                  <img src="/RIAM_Logo_White.png" alt="RIAM Logo" style="height: 60px; margin-bottom: 12px; filter: brightness(0);" />
                   <div class="logo-text" style="cursor: pointer;">Accordo AI</div>
                 </RouterLink>
                 <div class="logo-subtitle">Digital Music Passport & AI Coaching</div>

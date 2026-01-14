@@ -28,6 +28,18 @@ let currentStudentChart = null
 const showFeedbackModal = ref(false)
 const selectedFileForFeedback = ref(null)
 
+// Set Goal form state
+const goalForm = ref({
+  programme: '',
+  title: '',
+  description: '',
+  stages: [
+    { id: 1, name: '', description: '' },
+    { id: 2, name: '', description: '' }
+  ]
+})
+let nextStageId = 3
+
 // Mock student data - will be replaced with API calls
 const students = ref([
   {
@@ -323,7 +335,6 @@ const studentsForTable = computed(() => {
     studentId: s.studentId,
     programme: s.profile.programme,
     averageScore: getAverageScore(s),
-    lastActivity: '-',
     fullData: s
   }))
 })
@@ -408,6 +419,37 @@ onMounted(async () => {
 const handleLogout = async () => {
   await authStore.logout()
 }
+
+// Set Goal form methods
+const addStage = () => {
+  goalForm.value.stages.push({
+    id: nextStageId++,
+    name: '',
+    description: ''
+  })
+}
+
+const removeStage = (stageId) => {
+  if (goalForm.value.stages.length > 1) {
+    goalForm.value.stages = goalForm.value.stages.filter(stage => stage.id !== stageId)
+  }
+}
+
+const handleSubmitGoal = () => {
+  // TODO: Submit goal to backend API
+  console.log('Submitting goal:', goalForm.value)
+  // Reset form after submission
+  goalForm.value = {
+    programme: '',
+    title: '',
+    description: '',
+    stages: [
+      { id: 1, name: '', description: '' },
+      { id: 2, name: '', description: '' }
+    ]
+  }
+  nextStageId = 3
+}
 </script>
 
 <template>
@@ -416,6 +458,7 @@ const handleLogout = async () => {
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom navbar-tall">
       <div class="container-fluid">
         <RouterLink to="/" class="navbar-brand d-flex align-items-center">
+          <img src="/RIAM_Logo_White.png" alt="RIAM Logo" style="height: 40px; margin-right: 12px;" />
           <span class="navbar-brand-text">Accordo AI</span>
         </RouterLink>
         <button class="navbar-toggler" type="button" @click="toggleSidebar">
@@ -557,22 +600,66 @@ const handleLogout = async () => {
               <div class="card mb-3">
                 <div class="card-body">
                   <h5 class="card-title">Create Goal with Stages</h5>
-                  <form>
+                  <form @submit.prevent="handleSubmitGoal">
                     <div class="mb-3">
                       <label for="goalClass" class="form-label">Select Programme/Student</label>
-                      <select class="form-select" id="goalClass">
+                      <select class="form-select" id="goalClass" v-model="goalForm.programme">
+                        <option value="">Select Programme/Student</option>
                         <option>Junior RIAM (Years 1–2) - All Students</option>
+                        <option>Junior RIAM (Years 3-4) - All Students</option>
+                        <option>Junior RIAM (Years 5-6) - All Students</option>
+                        <option>Young Artist Programme - All Students</option>
                         <option>Individual: Aoife Byrne (S01)</option>
+                        <option>Individual: Conor Walsh (S02)</option>
+                        <option>Individual: Ella Murphy (S03)</option>
+                        <option>Individual: Rory Fitzpatrick (S04)</option>
+                        <option>Individual: Saoirse Nolan (S05)</option>
                       </select>
                     </div>
                     <div class="mb-3">
                       <label for="goalTitle" class="form-label">Goal Title (Piece/Skill Name)</label>
-                      <input type="text" class="form-control" id="goalTitle" placeholder="e.g., Twinkle Twinkle Variations A">
+                      <input type="text" class="form-control" id="goalTitle" v-model="goalForm.title" placeholder="e.g., Twinkle Twinkle Variations A">
                     </div>
                     <div class="mb-3">
                       <label for="goalDescription" class="form-label">Description</label>
-                      <textarea class="form-control" id="goalDescription" rows="2" placeholder="Describe the goal and overall objective..."></textarea>
+                      <textarea class="form-control" id="goalDescription" rows="2" v-model="goalForm.description" placeholder="Describe the goal and overall objective..."></textarea>
                     </div>
+
+                    <!-- Stages Section -->
+                    <div class="mb-3">
+                      <label class="form-label"><strong>Stages</strong> (Each stage requires positive feedback to progress)</label>
+                      <div v-for="(stage, index) in goalForm.stages" :key="stage.id" class="card mb-2 stage-item">
+                        <div class="card-body">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Stage {{ index + 1 }}</h6>
+                            <button 
+                              type="button" 
+                              class="btn btn-sm btn-danger" 
+                              @click="removeStage(stage.id)"
+                              :disabled="goalForm.stages.length === 1"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <input 
+                            type="text" 
+                            class="form-control mb-2" 
+                            v-model="stage.name"
+                            placeholder="Stage name (e.g., Learn notes and rhythm)" 
+                          />
+                          <textarea 
+                            class="form-control" 
+                            rows="2" 
+                            v-model="stage.description"
+                            placeholder="Stage description and requirements..."
+                          ></textarea>
+                        </div>
+                      </div>
+                      <button type="button" class="btn btn-sm btn-outline-primary mt-2" @click="addStage">
+                        <i class="bi bi-plus-circle"></i> Add Another Stage
+                      </button>
+                    </div>
+
                     <button type="submit" class="btn btn-primary-custom">Set Goal with Stages</button>
                   </form>
                 </div>
@@ -627,7 +714,6 @@ const handleLogout = async () => {
                       <th>Student Name</th>
                       <th>Programme</th>
                       <th>Average Score</th>
-                      <th>Last Activity</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -636,7 +722,6 @@ const handleLogout = async () => {
                       <td>{{ student.name }}</td>
                       <td>{{ student.programme }}</td>
                       <td><span class="badge" :class="student.averageScore >= 75 ? 'bg-success' : student.averageScore >= 50 ? 'bg-warning' : 'bg-danger'">{{ student.averageScore }}%</span></td>
-                      <td>{{ student.lastActivity }}</td>
                       <td><button class="btn btn-sm btn-info" @click="viewStudent(student)">View</button></td>
                     </tr>
                   </tbody>
