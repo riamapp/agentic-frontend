@@ -158,21 +158,17 @@ export function useFiles() {
     }
   }
 
-  // Get feedback for a file
+  // Get feedback for a specific file
   const getFeedback = async (fileKey, studentId) => {
     if (!fileKey) throw new Error('No file key provided')
     if (!studentId) throw new Error('Student ID is required')
 
     try {
-      const response = await authenticatedUserFetch('/student/getFeedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileKey: fileKey,
-          student_id: studentId,
-        }),
+      // Use GET request with file key as path parameter
+      // Encode the fileKey to handle special characters in the path
+      const encodedFileKey = encodeURIComponent(fileKey)
+      const response = await authenticatedAgentFetch(`/feedback/${encodedFileKey}`, {
+        method: 'GET',
       })
 
       if (!response.ok) {
@@ -186,6 +182,35 @@ export function useFiles() {
       }
 
       const data = await response.json()
+      
+      // Check if the response contains a downloadUrl with a presigned URL
+      const downloadUrl = data.downloadUrl || data.download_url || (data.feedback && data.feedback.downloadUrl) || (data.feedback && data.feedback.download_url)
+      
+      if (downloadUrl) {
+        try {
+          // Fetch the actual content from the presigned URL
+          const contentResponse = await fetch(downloadUrl)
+          if (!contentResponse.ok) {
+            throw new Error(`Failed to fetch content from downloadUrl: ${contentResponse.status} ${contentResponse.statusText}`)
+          }
+          
+          // Get the content as text
+          const content = await contentResponse.text()
+          
+          // Try to parse as JSON if it looks like JSON
+          try {
+            return JSON.parse(content)
+          } catch {
+            // Not JSON, return as text
+            return content
+          }
+        } catch (err) {
+          console.error('Failed to fetch feedback content from downloadUrl:', err)
+          throw new Error(`Failed to fetch feedback content: ${err.message}`)
+        }
+      }
+
+      // If no downloadUrl found, return the data as-is
       return data.feedback || data
     } catch (err) {
       console.error('Error fetching feedback:', err)
@@ -198,14 +223,12 @@ export function useFiles() {
     if (!studentId) throw new Error('Student ID is required')
 
     try {
-      const response = await authenticatedUserFetch('/files', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          student_id: studentId,
-        }),
+      // Use GET request with query parameters
+      const params = new URLSearchParams({
+        student_id: studentId,
+      })
+      const response = await authenticatedAgentFetch(`/feedback?${params.toString()}`, {
+        method: 'GET',
       })
 
       if (!response.ok) {
@@ -221,11 +244,99 @@ export function useFiles() {
     }
   }
 
+  // Download file content from S3 using presigned URL
+  const downloadFileContent = async (fileKey, fileName = null) => {
+    if (!fileKey) throw new Error('No file key provided')
+
+    try {
+      // Get presigned download URL
+      const downloadUrl = await fetchFileUrl(fileKey)
+      if (!downloadUrl) {
+        throw new Error('Failed to get download URL')
+      }
+
+      // Fetch the file content
+      const response = await fetch(downloadUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`)
+      }
+
+      // Get the file as a blob
+      const blob = await response.blob()
+
+      // Create a temporary URL for the blob
+      const blobUrl = URL.createObjectURL(blob)
+
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = fileName || fileKey.split('/').pop() || 'download'
+      document.body.appendChild(link)
+      link.click()
+
+      // Clean up
+      document.body.removeChild(link)
+      URL.revokeObjectURL(blobUrl)
+
+      return blob
+    } catch (err) {
+      console.error('Error downloading file content:', err)
+      throw err
+    }
+  }
+
+  // Get file content as text (for text-based files)
+  const getFileContentAsText = async (fileKey) => {
+    if (!fileKey) throw new Error('No file key provided')
+
+    try {
+      const downloadUrl = await fetchFileUrl(fileKey)
+      if (!downloadUrl) {
+        throw new Error('Failed to get download URL')
+      }
+
+      const response = await fetch(downloadUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`)
+      }
+
+      return await response.text()
+    } catch (err) {
+      console.error('Error fetching file content as text:', err)
+      throw err
+    }
+  }
+
+  // Get file content as blob (for binary files, images, etc.)
+  const getFileContentAsBlob = async (fileKey) => {
+    if (!fileKey) throw new Error('No file key provided')
+
+    try {
+      const downloadUrl = await fetchFileUrl(fileKey)
+      if (!downloadUrl) {
+        throw new Error('Failed to get download URL')
+      }
+
+      const response = await fetch(downloadUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`)
+      }
+
+      return await response.blob()
+    } catch (err) {
+      console.error('Error fetching file content as blob:', err)
+      throw err
+    }
+  }
+
   return {
     uploadFile,
     fetchFileUrl,
     deleteFile,
     getFeedback,
     listFiles,
+    downloadFileContent,
+    getFileContentAsText,
+    getFileContentAsBlob,
   }
 }
